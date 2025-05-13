@@ -1,9 +1,12 @@
 package services
 
-import "context"
+import (
+	"bmt_showtime_service/dto/request"
+	"context"
+)
 
-type IShowTime interface {
-	AddShowTime(ctx context.Context) (int, error)
-	DeleteShowTime(ctx context.Context) (int, error)
-	GetShowTime(ctx context.Context) (interface{}, int, error)
+type IShowtime interface {
+	AddShowtime(ctx context.Context, arg request.AddShowtimeRequest) (int, error)
+	DeleteShowtime(ctx context.Context) (int, error)
+	GetShowtime(ctx context.Context) (interface{}, int, error)
 }

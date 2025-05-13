@@ -43,6 +43,7 @@ CREATE TABLE
         "start_time" timestamp NOT NULL,
         "end_time" timestamp NOT NULL,
         "is_deleted" boolean NOT NULL DEFAULT false,
+        "changed_by" varchar(32) NOT NULL DEFAULT '',
         "created_at" timestamp DEFAULT (now ()),
         "updated_at" timestamp DEFAULT (now ())
     );
@@ -127,7 +128,7 @@ BEGIN
 
                 INSERT INTO seats (auditorium_id, seat_number, seat_type, price)
                 VALUES (aud.id, seat_number, seat_type, 
-                    CASE seat_typeư
+                    CASE seat_type
                         WHEN 'standard' THEN 50000
                         WHEN 'vip' THEN 80000
                         WHEN 'coupled' THEN 100000
