@@ -158,6 +158,11 @@ type Cinemas struct {
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
 
+type FilmIds struct {
+	ID     int32 `json:"id"`
+	FilmID int32 `json:"film_id"`
+}
+
 type Seats struct {
 	ID           int32            `json:"id"`
 	AuditoriumID int32            `json:"auditorium_id"`

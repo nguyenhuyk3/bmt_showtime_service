@@ -9,9 +9,11 @@ import (
 )
 
 type Querier interface {
+	CreateNewFilmId(ctx context.Context, filmID int32) error
 	CreateShowTime(ctx context.Context, arg CreateShowTimeParams) error
 	GetShowtimeById(ctx context.Context, id int32) (Showtimes, error)
 	IsAuditoriumExist(ctx context.Context, id int32) (bool, error)
+	IsFilmIdExist(ctx context.Context, id int32) (bool, error)
 }
 
 var _ Querier = (*Queries)(nil)

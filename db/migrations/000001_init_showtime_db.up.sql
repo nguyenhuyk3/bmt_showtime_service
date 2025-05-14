@@ -1,63 +1,75 @@
-CREATE TYPE "seat_statuses" AS ENUM ('available', 'reserved', 'booked');
+CREATE TYPE "seat_statuses" AS ENUM (
+  'available',
+  'reserved',
+  'booked'
+);
 
-CREATE TYPE "cities" AS ENUM ('HO_CHI_MINH', 'HA_NOI', 'DONG_NAI');
+CREATE TYPE "cities" AS ENUM (
+  'HO_CHI_MINH',
+  'HA_NOI',
+  'DONG_NAI'
+);
 
-CREATE TYPE "seat_types" AS ENUM ('standard', 'coupled', 'vip');
+CREATE TYPE "seat_types" AS ENUM (
+  'standard',
+  'coupled',
+  'vip'
+);
 
-CREATE TABLE
-    "cinemas" (
-        "id" serial PRIMARY KEY NOT NULL,
-        "name" text UNIQUE NOT NULL,
-        "city" cities NOT NULL,
-        "location" text NOT NULL,
-        "created_at" timestamp DEFAULT (now ()),
-        "updated_at" timestamp DEFAULT (now ())
-    );
+CREATE TABLE "cinemas" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "name" text UNIQUE NOT NULL,
+  "city" cities NOT NULL,
+  "location" text NOT NULL,
+  "created_at" timestamp DEFAULT (now()),
+  "updated_at" timestamp DEFAULT (now())
+);
 
-CREATE TABLE
-    "auditoriums" (
-        "id" serial PRIMARY KEY,
-        "cinema_id" int NOT NULL,
-        "name" text NOT NULL,
-        "seat_capacity" int NOT NULL DEFAULT 0,
-        "created_at" timestamp DEFAULT (now ()),
-        "updated_at" timestamp DEFAULT (now ())
-    );
+CREATE TABLE "auditoriums" (
+  "id" serial PRIMARY KEY,
+  "cinema_id" int NOT NULL,
+  "name" text NOT NULL,
+  "seat_capacity" int NOT NULL DEFAULT 0,
+  "created_at" timestamp DEFAULT (now()),
+  "updated_at" timestamp DEFAULT (now())
+);
 
-CREATE TABLE
-    "seats" (
-        "id" serial PRIMARY KEY,
-        "auditorium_id" int NOT NULL,
-        "seat_number" varchar(5) NOT NULL,
-        "seat_type" seat_types NOT NULL,
-        "price" int NOT NULL DEFAULT 0,
-        "created_at" timestamp DEFAULT (now ()),
-        "updated_at" timestamp DEFAULT (now ())
-    );
+CREATE TABLE "seats" (
+  "id" serial PRIMARY KEY,
+  "auditorium_id" int NOT NULL,
+  "seat_number" varchar(5) NOT NULL,
+  "seat_type" seat_types NOT NULL,
+  "price" int NOT NULL DEFAULT 0,
+  "created_at" timestamp DEFAULT (now()),
+  "updated_at" timestamp DEFAULT (now())
+);
 
-CREATE TABLE
-    "showtimes" (
-        "id" serial PRIMARY KEY,
-        "film_id" int NOT NULL,
-        "auditorium_id" int NOT NULL,
-        "start_time" timestamp NOT NULL,
-        "end_time" timestamp NOT NULL,
-        "is_deleted" boolean NOT NULL DEFAULT false,
-        "changed_by" varchar(32) NOT NULL DEFAULT '',
-        "created_at" timestamp DEFAULT (now ()),
-        "updated_at" timestamp DEFAULT (now ())
-    );
+CREATE TABLE "showtimes" (
+  "id" serial PRIMARY KEY,
+  "film_id" int NOT NULL,
+  "auditorium_id" int NOT NULL,
+  "start_time" timestamp NOT NULL,
+  "end_time" timestamp NOT NULL,
+  "is_deleted" boolean NOT NULL DEFAULT false,
+  "changed_by" varchar(32) NOT NULL,
+  "created_at" timestamp DEFAULT (now()),
+  "updated_at" timestamp DEFAULT (now())
+);
 
-CREATE TABLE
-    "showtime_seats" (
-        "id" serial PRIMARY KEY,
-        "showtime_id" int NOT NULL,
-        "seat_id" int NOT NULL,
-        "status" seat_statuses NOT NULL,
-        "booked_by" varchar(64) NOT NULL DEFAULT '',
-        "created_at" timestamp DEFAULT (now ()),
-        "booked_at" timestamp
-    );
+CREATE TABLE "showtime_seats" (
+  "id" serial PRIMARY KEY,
+  "showtime_id" int NOT NULL,
+  "seat_id" int NOT NULL,
+  "status" seat_statuses NOT NULL,
+  "booked_by" varchar(64) NOT NULL DEFAULT '',
+  "created_at" timestamp DEFAULT (now()),
+  "booked_at" timestamp
+);
+
+CREATE TABLE "film_ids" (
+  "id" serial PRIMARY KEY,
+  "film_id" int UNIQUE NOT NULL
+);
 
 CREATE INDEX ON "cinemas" ("id", "name");
 

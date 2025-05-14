@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -22,9 +21,13 @@ type showtimeService struct {
 
 // AddShowtime implements services.IShowtime.
 func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowtimeRequest) (int, error) {
-	isFilmExists := s.RedisClient.ExistsKey(fmt.Sprintf("%s%s", global.FILM, strconv.Itoa(int(arg.FilmId))))
+	isFilmExists, err := s.Querier.IsFilmIdExist(ctx, arg.FilmId)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("failed to check film existence: %w", err)
+	}
+
 	if !isFilmExists {
-		return http.StatusBadRequest, fmt.Errorf("film doesn't exist")
+		return http.StatusNotFound, fmt.Errorf("film doesn't exist")
 	}
 
 	isAuditoriumExist, err := s.Querier.IsAuditoriumExist(ctx, arg.FilmId)
@@ -52,6 +55,7 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 	err = s.Querier.CreateShowTime(ctx, sqlc.CreateShowTimeParams{
 		FilmID:       arg.FilmId,
 		AuditoriumID: arg.AuditoriumId,
+		ChangedBy:    arg.ChangedBy,
 		StartTime: pgtype.Timestamp{
 			Time:  startTime,
 			Valid: true,
