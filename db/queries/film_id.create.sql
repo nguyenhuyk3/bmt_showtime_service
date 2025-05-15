@@ -1,7 +1,8 @@
 -- name: CreateNewFilmId :exec
-INSERT INTO film_ids (
-    film_id
+INSERT INTO film_infos (
+    film_id,
+    duration
 )
 VALUES (
-    $1
+    $1, $2
 );

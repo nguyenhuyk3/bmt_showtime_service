@@ -48,6 +48,7 @@ CREATE TABLE "showtimes" (
   "id" serial PRIMARY KEY,
   "film_id" int NOT NULL,
   "auditorium_id" int NOT NULL,
+  "show_date" date NOT NULL,
   "start_time" timestamp NOT NULL,
   "end_time" timestamp NOT NULL,
   "is_deleted" boolean NOT NULL DEFAULT false,
@@ -66,9 +67,10 @@ CREATE TABLE "showtime_seats" (
   "booked_at" timestamp
 );
 
-CREATE TABLE "film_ids" (
+CREATE TABLE "film_infos" (
   "id" serial PRIMARY KEY,
-  "film_id" int UNIQUE NOT NULL
+  "film_id" int UNIQUE NOT NULL,
+  "duration" interval NOT NULL
 );
 
 CREATE INDEX ON "cinemas" ("id", "name");
@@ -93,6 +95,16 @@ ALTER TABLE "showtime_seats" ADD FOREIGN KEY ("showtime_id") REFERENCES "showtim
 
 ALTER TABLE "showtime_seats" ADD FOREIGN KEY ("seat_id") REFERENCES "seats" ("id");
 
+
+-- Addition commands
+ALTER TABLE showtimes
+ADD CONSTRAINT show_date_not_in_past
+CHECK (show_date::date >= CURRENT_DATE);
+
+ALTER TABLE showtimes
+ADD CONSTRAINT valid_showtime_duration
+CHECK (start_time <= end_time);
+
 INSERT INTO
     "cinemas" ("name", "city", "location")
 VALUES
@@ -101,6 +113,12 @@ VALUES
         'HO_CHI_MINH',
         'Vincom Landmark 81'
     );
+
+INSERT INTO film_infos (film_id, duration)
+VALUES
+  (1, INTERVAL '1 hour 31 minutes'),
+  (2, INTERVAL '1 hour 45 minutes'),
+  (3, INTERVAL '2 hours 10 minutes');
 
 INSERT INTO
     "auditoriums" ("cinema_id", "name", "seat_capacity")

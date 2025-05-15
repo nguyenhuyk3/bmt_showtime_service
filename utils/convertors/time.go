@@ -2,7 +2,10 @@ package convertors
 
 import (
 	"errors"
+	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ParseTimeWithDate parses a string like "11:30 13-05-2025" into a time.Time value
@@ -63,4 +66,32 @@ func ParseAndValidateTime(input string) (time.Time, error) {
 	}
 
 	return parsedTime, nil
+}
+
+func RoundDurationToNearestFive(d time.Duration) time.Duration {
+	totalMinutes := int(d.Minutes())
+	roundedMinutes := ((totalMinutes + 4) / 5) * 5
+
+	return time.Duration(roundedMinutes) * time.Minute
+}
+
+func ConvertDateStringToTime(input string) (time.Time, error) {
+	parsedTime, err := time.Parse("2006-01-02", input)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid date format (%s): %v", input, err)
+	}
+
+	return parsedTime, nil
+}
+
+func ParseDurationToPGInterval(durationStr string) (pgtype.Interval, error) {
+	duration, err := time.ParseDuration(durationStr)
+	if err != nil {
+		return pgtype.Interval{}, fmt.Errorf("invalid duration format: %v", err)
+	}
+
+	return pgtype.Interval{
+		Microseconds: duration.Microseconds(),
+		Valid:        true,
+	}, nil
 }

@@ -16,11 +16,12 @@ INSERT INTO showtimes (
     film_id,
     auditorium_id,
     changed_by,
+    show_date,
     start_time,
     end_time
 )
 VALUES (
-    $1, $2, $3, $4, $5
+    $1, $2, $3, $4, $5, $6
 )
 `
 
@@ -28,6 +29,7 @@ type CreateShowTimeParams struct {
 	FilmID       int32            `json:"film_id"`
 	AuditoriumID int32            `json:"auditorium_id"`
 	ChangedBy    string           `json:"changed_by"`
+	ShowDate     pgtype.Date      `json:"show_date"`
 	StartTime    pgtype.Timestamp `json:"start_time"`
 	EndTime      pgtype.Timestamp `json:"end_time"`
 }
@@ -37,6 +39,7 @@ func (q *Queries) CreateShowTime(ctx context.Context, arg CreateShowTimeParams) 
 		arg.FilmID,
 		arg.AuditoriumID,
 		arg.ChangedBy,
+		arg.ShowDate,
 		arg.StartTime,
 		arg.EndTime,
 	)

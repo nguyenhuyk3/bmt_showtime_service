@@ -158,9 +158,10 @@ type Cinemas struct {
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
 
-type FilmIds struct {
-	ID     int32 `json:"id"`
-	FilmID int32 `json:"film_id"`
+type FilmInfos struct {
+	ID       int32           `json:"id"`
+	FilmID   int32           `json:"film_id"`
+	Duration pgtype.Interval `json:"duration"`
 }
 
 type Seats struct {
@@ -187,6 +188,7 @@ type Showtimes struct {
 	ID           int32            `json:"id"`
 	FilmID       int32            `json:"film_id"`
 	AuditoriumID int32            `json:"auditorium_id"`
+	ShowDate     pgtype.Date      `json:"show_date"`
 	StartTime    pgtype.Timestamp `json:"start_time"`
 	EndTime      pgtype.Timestamp `json:"end_time"`
 	IsDeleted    bool             `json:"is_deleted"`

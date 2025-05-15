@@ -7,10 +7,27 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getLatestShowtimeByAuditoriumId = `-- name: GetLatestShowtimeByAuditoriumId :one
+SELECT end_time
+FROM showtimes
+WHERE auditorium_id = $1
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestShowtimeByAuditoriumId(ctx context.Context, auditoriumID int32) (pgtype.Timestamp, error) {
+	row := q.db.QueryRow(ctx, getLatestShowtimeByAuditoriumId, auditoriumID)
+	var end_time pgtype.Timestamp
+	err := row.Scan(&end_time)
+	return end_time, err
+}
+
 const getShowtimeById = `-- name: GetShowtimeById :one
-SELECT id, film_id, auditorium_id, start_time, end_time, is_deleted, changed_by, created_at, updated_at
+SELECT id, film_id, auditorium_id, show_date, start_time, end_time, is_deleted, changed_by, created_at, updated_at
 FROM showtimes
 WHERE id = $1
 LIMIT 1
@@ -23,6 +40,7 @@ func (q *Queries) GetShowtimeById(ctx context.Context, id int32) (Showtimes, err
 		&i.ID,
 		&i.FilmID,
 		&i.AuditoriumID,
+		&i.ShowDate,
 		&i.StartTime,
 		&i.EndTime,
 		&i.IsDeleted,

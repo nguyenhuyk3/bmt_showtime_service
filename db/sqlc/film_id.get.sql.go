@@ -7,11 +7,26 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const getDuration = `-- name: GetDuration :one
+SELECT duration
+FROM film_infos
+WHERE film_id = $1
+`
+
+func (q *Queries) GetDuration(ctx context.Context, filmID int32) (pgtype.Interval, error) {
+	row := q.db.QueryRow(ctx, getDuration, filmID)
+	var duration pgtype.Interval
+	err := row.Scan(&duration)
+	return duration, err
+}
 
 const isFilmIdExist = `-- name: IsFilmIdExist :one
 SELECT EXISTS (
-    SELECT 1 FROM "film_ids" WHERE id = $1
+    SELECT 1 FROM "film_infos" WHERE id = $1
 ) AS exists
 `
 

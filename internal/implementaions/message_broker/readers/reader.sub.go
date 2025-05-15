@@ -1,8 +1,10 @@
 package readers
 
 import (
+	"bmt_showtime_service/db/sqlc"
 	"bmt_showtime_service/dto/messages"
 	"bmt_showtime_service/global"
+	"bmt_showtime_service/utils/convertors"
 	"context"
 	"encoding/json"
 	"log"
@@ -51,7 +53,17 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 }
 
 func (m *MessageBrokerReader) handleNewFilmCreationTopic(message messages.NewFilmCreationTopic) {
-	err := m.SqlQuery.CreateNewFilmId(m.Context, message.FilmId)
+	duration, err := convertors.ParseDurationToPGInterval(message.Duration)
+	if err != nil {
+		log.Printf("an error occurre when converting to duration: %v", err)
+		return
+	}
+
+	err = m.SqlQuery.CreateNewFilmId(m.Context,
+		sqlc.CreateNewFilmIdParams{
+			FilmID:   message.FilmId,
+			Duration: duration,
+		})
 	if err != nil {
 		log.Printf("an error occur when creating new film id: %v", err)
 	} else {

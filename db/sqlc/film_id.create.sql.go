@@ -7,18 +7,26 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createNewFilmId = `-- name: CreateNewFilmId :exec
-INSERT INTO film_ids (
-    film_id
+INSERT INTO film_infos (
+    film_id,
+    duration
 )
 VALUES (
-    $1
+    $1, $2
 )
 `
 
-func (q *Queries) CreateNewFilmId(ctx context.Context, filmID int32) error {
-	_, err := q.db.Exec(ctx, createNewFilmId, filmID)
+type CreateNewFilmIdParams struct {
+	FilmID   int32           `json:"film_id"`
+	Duration pgtype.Interval `json:"duration"`
+}
+
+func (q *Queries) CreateNewFilmId(ctx context.Context, arg CreateNewFilmIdParams) error {
+	_, err := q.db.Exec(ctx, createNewFilmId, arg.FilmID, arg.Duration)
 	return err
 }

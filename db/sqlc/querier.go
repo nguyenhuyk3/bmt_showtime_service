@@ -6,11 +6,15 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
-	CreateNewFilmId(ctx context.Context, filmID int32) error
+	CreateNewFilmId(ctx context.Context, arg CreateNewFilmIdParams) error
 	CreateShowTime(ctx context.Context, arg CreateShowTimeParams) error
+	GetDuration(ctx context.Context, filmID int32) (pgtype.Interval, error)
+	GetLatestShowtimeByAuditoriumId(ctx context.Context, auditoriumID int32) (pgtype.Timestamp, error)
 	GetShowtimeById(ctx context.Context, id int32) (Showtimes, error)
 	IsAuditoriumExist(ctx context.Context, id int32) (bool, error)
 	IsFilmIdExist(ctx context.Context, id int32) (bool, error)
