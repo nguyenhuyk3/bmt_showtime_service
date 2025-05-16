@@ -7,6 +7,7 @@ import (
 
 type IShowtime interface {
 	AddShowtime(ctx context.Context, arg request.AddShowtimeRequest) (int, error)
-	DeleteShowtime(ctx context.Context) (int, error)
-	GetShowtime(ctx context.Context) (interface{}, int, error)
+	TurnOnShowtime(ctx context.Context, showtimeId int32) (int, error)
+	GetShowtime(ctx context.Context, showtimeId int32) (interface{}, int, error)
+	GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg request.GetAllShowTimesInOneDateRequest) (interface{}, int, error)
 }

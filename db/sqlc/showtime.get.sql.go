@@ -11,6 +11,48 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getAllShowTimesByFilmIdInOneDate = `-- name: GetAllShowTimesByFilmIdInOneDate :many
+SELECT id, film_id, auditorium_id, show_date, start_time, end_time, is_deleted, changed_by, created_at, updated_at 
+FROM showtimes 
+WHERE film_id = $1 AND show_date = $2
+`
+
+type GetAllShowTimesByFilmIdInOneDateParams struct {
+	FilmID   int32       `json:"film_id"`
+	ShowDate pgtype.Date `json:"show_date"`
+}
+
+func (q *Queries) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdInOneDateParams) ([]Showtimes, error) {
+	rows, err := q.db.Query(ctx, getAllShowTimesByFilmIdInOneDate, arg.FilmID, arg.ShowDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Showtimes{}
+	for rows.Next() {
+		var i Showtimes
+		if err := rows.Scan(
+			&i.ID,
+			&i.FilmID,
+			&i.AuditoriumID,
+			&i.ShowDate,
+			&i.StartTime,
+			&i.EndTime,
+			&i.IsDeleted,
+			&i.ChangedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLatestShowtimeByAuditoriumId = `-- name: GetLatestShowtimeByAuditoriumId :one
 SELECT end_time
 FROM showtimes
@@ -49,4 +91,18 @@ func (q *Queries) GetShowtimeById(ctx context.Context, id int32) (Showtimes, err
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const isShowtimeExist = `-- name: IsShowtimeExist :one
+SELECT EXISTS (
+    SELECT 1 FROM showtimes 
+    WHERE id = $1
+) AS EXISTS
+`
+
+func (q *Queries) IsShowtimeExist(ctx context.Context, id int32) (bool, error) {
+	row := q.db.QueryRow(ctx, isShowtimeExist, id)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }

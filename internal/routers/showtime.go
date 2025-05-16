@@ -26,5 +26,11 @@ func (sr *ShowtimeRouter) InitShowtimeRouter(router *gin.RouterGroup) {
 				getFromHeaderMiddleware.GetEmailFromHeader(),
 				showtimeController.AddShowtime)
 		}
+
+		showtimePublicRouter := showtimePublicRouter.Group("/public")
+		{
+			showtimePublicRouter.GET("/get/:showtime_id", showtimeController.GetShowTime)
+			showtimePublicRouter.GET("/get_all_showtimes", showtimeController.GetAllShowTimesByFilmIdInOneDate)
+		}
 	}
 }

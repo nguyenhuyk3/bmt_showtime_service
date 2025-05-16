@@ -25,22 +25,6 @@ const (
 	time_off = 25 * time.Minute
 )
 
-/*
-	Các bước thực hiện hàm AddShowtime
-	Bước 1: Kiểm tra xem phim và rạp chiếu có tồn tại hay không
-	Bước 2: Kiểm tra thời gian bắt đầu chiếu có hợp lệ hay không
-		Nếu arg.StartTime == ""
-			Bước 2.1: Kiểm tra thời gian chiếu gần nhất của phòng arg.AuditoriumId
-			Bước 2.2: StartTime = Thời gian chiếu gần nhất + 20 phút
-		Nếu arg.StartTime != ""
-			Bước 2.1: Thì StartTime hợp lệ
-	Bước 3: Kiểm tra thời gian kết thúc có hợp lệ hay không
-		Nếu arg.EndTime == ""
-			Bước 3.1: EndTime bằng StartTime + Duration
-		Nếu arg.EndTIme != ""
-			Bước 3.1: EndTime hợp lệ
-	Bước 4: Thêm mới showtime
-*/
 // AddShowtime implements services.IShowtime.
 func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowtimeRequest) (int, error) {
 	isFilmExist, err := s.Querier.IsFilmIdExist(ctx, arg.FilmId)
@@ -66,7 +50,7 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 
 	var startTime time.Time
 
-	latestShowTime, err := s.Querier.GetLatestShowtimeByAuditoriumId(ctx, arg.AuditoriumId)
+	latestShowtime, err := s.Querier.GetLatestShowtimeByAuditoriumId(ctx, arg.AuditoriumId)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -78,7 +62,13 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 			return http.StatusInternalServerError, fmt.Errorf("failed to get latest showtime: %w", err)
 		}
 	} else {
-		startTime = latestShowTime.Time.Add(time_off)
+		if !latestShowtime.Time.IsZero() &&
+			(latestShowtime.Time.Year() != showDate.Year() ||
+				latestShowtime.Time.Month() != showDate.Month() ||
+				latestShowtime.Time.Day() != showDate.Day()) {
+			return http.StatusBadRequest, fmt.Errorf("latest showtime already crosses into the next day")
+		}
+		startTime = latestShowtime.Time.Add(time_off)
 	}
 
 	filmDuration, err := s.Querier.GetDuration(ctx, arg.FilmId)
@@ -117,14 +107,66 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 	return http.StatusOK, nil
 }
 
-// DeleteShowtime implements services.IShowtime.
-func (s *showtimeService) DeleteShowtime(ctx context.Context) (int, error) {
-	panic("unimplemented")
+// TurnOnShowtime implements services.IShowtime.
+func (s *showtimeService) TurnOnShowtime(ctx context.Context, showtimeId int32) (int, error) {
+	isShowtimeExist, err := s.Querier.IsShowtimeExist(ctx, showtimeId)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("failed to check showtime existence: %w", err)
+	}
+	if !isShowtimeExist {
+		return http.StatusNotFound, fmt.Errorf("showtime with id %d does not exist", showtimeId)
+	}
+
+	err = s.Querier.TurnOnShowtime(ctx, showtimeId)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("an error occur when querying db: %w", err)
+	}
+
+	return http.StatusOK, nil
 }
 
 // GetShowtime implements services.IShowtime.
-func (s *showtimeService) GetShowtime(ctx context.Context) (interface{}, int, error) {
-	panic("unimplemented")
+func (s *showtimeService) GetShowtime(ctx context.Context, showtimeId int32) (interface{}, int, error) {
+	isShowtimeExist, err := s.Querier.IsShowtimeExist(ctx, showtimeId)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("failed to check showtime existence: %w", err)
+	}
+	if !isShowtimeExist {
+		return nil, http.StatusNotFound, fmt.Errorf("showtime with id %d does not exist", showtimeId)
+	}
+
+	showtime, err := s.Querier.GetShowtimeById(ctx, showtimeId)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get showtime: %w", err)
+	}
+
+	return showtime, http.StatusOK, nil
+}
+
+// GetAllShowTimesByFilmIdInOneDate implements services.IShowtime.
+func (s *showtimeService) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg request.GetAllShowTimesInOneDateRequest) (interface{}, int, error) {
+	showDate, err := convertors.ConvertDateStringToTime(arg.ShowDate)
+	if err != nil {
+		return nil, http.StatusBadRequest, err
+	}
+
+	showtimes, err := s.Querier.GetAllShowTimesByFilmIdInOneDate(ctx,
+		sqlc.GetAllShowTimesByFilmIdInOneDateParams{
+			FilmID: arg.FilmId,
+			ShowDate: pgtype.Date{
+				Time:  showDate,
+				Valid: true,
+			},
+		})
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get showtimes: %w", err)
+	}
+
+	if len(showtimes) == 0 {
+		return []interface{}{}, http.StatusNotFound, fmt.Errorf("no showtimes")
+	}
+
+	return showtimes, http.StatusOK, nil
 }
 
 func NewShowtimeService(redisClient services.IRedis) services.IShowtime {
