@@ -1,11 +1,12 @@
--- name: ReleaseShowtime :exec
+-- name: releaseShowtime :exec
 UPDATE showtimes
-SET is_deleted = !is_deleted,
+SET is_released = NOT is_released,
     updated_at = NOW()
 WHERE id = $1;
 
--- name: UpdateShowtime :exec
+
+-- name: updateShowtime :exec
 UPDATE showtimes
-SET changed_by = $1,
+SET changed_by = $2,
     updated_at = NOW()
 WHERE id = $1;

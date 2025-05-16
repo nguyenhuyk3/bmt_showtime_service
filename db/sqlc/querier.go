@@ -13,7 +13,6 @@ import (
 type Querier interface {
 	CreateNewFilmId(ctx context.Context, arg CreateNewFilmIdParams) error
 	CreateShowTime(ctx context.Context, arg CreateShowTimeParams) error
-	CreateShowtimeSeats(ctx context.Context, showtimeID int32) error
 	GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdInOneDateParams) ([]Showtimes, error)
 	GetDuration(ctx context.Context, filmID int32) (pgtype.Interval, error)
 	GetLatestShowtimeByAuditoriumId(ctx context.Context, auditoriumID int32) (pgtype.Timestamp, error)
@@ -21,9 +20,10 @@ type Querier interface {
 	IsAuditoriumExist(ctx context.Context, id int32) (bool, error)
 	IsFilmIdExist(ctx context.Context, id int32) (bool, error)
 	IsShowtimeExist(ctx context.Context, id int32) (bool, error)
-	IsShowtimeRealeased(ctx context.Context, id int32) (bool, error)
-	ReleaseShowtime(ctx context.Context, id int32) error
-	UpdateShowtime(ctx context.Context, changedBy string) error
+	createShowtimeSeats(ctx context.Context, showtimeID int32) error
+	isShowtimeRealeased(ctx context.Context, id int32) (bool, error)
+	releaseShowtime(ctx context.Context, id int32) error
+	updateShowtime(ctx context.Context, arg updateShowtimeParams) error
 }
 
 var _ Querier = (*Queries)(nil)

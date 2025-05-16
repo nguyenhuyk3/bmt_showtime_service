@@ -22,7 +22,7 @@ SELECT *
 FROM showtimes 
 WHERE film_id = $1 AND show_date = $2 AND is_released = true;
 
--- name: IsShowtimeRealeased :one
+-- name: isShowtimeRealeased :one
 SELECT is_released
 FROM showtimes
 WHERE id = $1;

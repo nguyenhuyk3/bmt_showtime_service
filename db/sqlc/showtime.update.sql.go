@@ -9,26 +9,31 @@ import (
 	"context"
 )
 
-const releaseShowtime = `-- name: ReleaseShowtime :exec
+const releaseShowtime = `-- name: releaseShowtime :exec
 UPDATE showtimes
-SET is_deleted = !is_deleted,
+SET is_released = NOT is_released,
     updated_at = NOW()
 WHERE id = $1
 `
 
-func (q *Queries) ReleaseShowtime(ctx context.Context, id int32) error {
+func (q *Queries) releaseShowtime(ctx context.Context, id int32) error {
 	_, err := q.db.Exec(ctx, releaseShowtime, id)
 	return err
 }
 
-const updateShowtime = `-- name: UpdateShowtime :exec
+const updateShowtime = `-- name: updateShowtime :exec
 UPDATE showtimes
-SET changed_by = $1,
+SET changed_by = $2,
     updated_at = NOW()
 WHERE id = $1
 `
 
-func (q *Queries) UpdateShowtime(ctx context.Context, changedBy string) error {
-	_, err := q.db.Exec(ctx, updateShowtime, changedBy)
+type updateShowtimeParams struct {
+	ID        int32  `json:"id"`
+	ChangedBy string `json:"changed_by"`
+}
+
+func (q *Queries) updateShowtime(ctx context.Context, arg updateShowtimeParams) error {
+	_, err := q.db.Exec(ctx, updateShowtime, arg.ID, arg.ChangedBy)
 	return err
 }

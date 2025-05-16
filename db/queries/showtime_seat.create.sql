@@ -1,4 +1,4 @@
--- name: CreateShowtimeSeats :exec
+-- name: createShowtimeSeats :exec
 INSERT INTO showtime_seats (showtime_id, seat_id, status, created_at)
 SELECT
     $1 AS showtime_id,

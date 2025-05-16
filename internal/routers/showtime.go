@@ -1,6 +1,8 @@
 package routers
 
 import (
+	"bmt_showtime_service/db/sqlc"
+	"bmt_showtime_service/global"
 	"bmt_showtime_service/internal/controllers"
 	"bmt_showtime_service/internal/implementaions/redis"
 	"bmt_showtime_service/internal/implementaions/showtime"
@@ -13,8 +15,9 @@ type ShowtimeRouter struct {
 }
 
 func (sr *ShowtimeRouter) InitShowtimeRouter(router *gin.RouterGroup) {
+	sqlStore := sqlc.NewStore(global.Postgresql)
 	redisClient := redis.NewRedisClient()
-	showtimeService := showtime.NewShowtimeService(redisClient)
+	showtimeService := showtime.NewShowtimeService(sqlStore, redisClient)
 	showtimeController := controllers.NewShowtimeController(showtimeService)
 	getFromHeaderMiddleware := middlewares.NewGetFromHeaderMiddleware()
 

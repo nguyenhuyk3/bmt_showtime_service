@@ -107,13 +107,13 @@ func (q *Queries) IsShowtimeExist(ctx context.Context, id int32) (bool, error) {
 	return exists, err
 }
 
-const isShowtimeRealeased = `-- name: IsShowtimeRealeased :one
+const isShowtimeRealeased = `-- name: isShowtimeRealeased :one
 SELECT is_released
 FROM showtimes
 WHERE id = $1
 `
 
-func (q *Queries) IsShowtimeRealeased(ctx context.Context, id int32) (bool, error) {
+func (q *Queries) isShowtimeRealeased(ctx context.Context, id int32) (bool, error) {
 	row := q.db.QueryRow(ctx, isShowtimeRealeased, id)
 	var is_released bool
 	err := row.Scan(&is_released)

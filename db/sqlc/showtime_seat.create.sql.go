@@ -9,7 +9,7 @@ import (
 	"context"
 )
 
-const createShowtimeSeats = `-- name: CreateShowtimeSeats :exec
+const createShowtimeSeats = `-- name: createShowtimeSeats :exec
 INSERT INTO showtime_seats (showtime_id, seat_id, status, created_at)
 SELECT
     $1 AS showtime_id,
@@ -24,7 +24,7 @@ WHERE
     sh.id = $1
 `
 
-func (q *Queries) CreateShowtimeSeats(ctx context.Context, showtimeID int32) error {
+func (q *Queries) createShowtimeSeats(ctx context.Context, showtimeID int32) error {
 	_, err := q.db.Exec(ctx, createShowtimeSeats, showtimeID)
 	return err
 }
