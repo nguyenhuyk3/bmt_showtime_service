@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -23,6 +24,7 @@ type showtimeService struct {
 
 const (
 	time_off = 25 * time.Minute
+	two_days = 60 * 24 * 2
 )
 
 // AddShowtime implements services.IShowtime.
@@ -122,6 +124,16 @@ func (s *showtimeService) TurnOnShowtime(ctx context.Context, showtimeId int32) 
 		return http.StatusInternalServerError, fmt.Errorf("an error occur when querying db: %w", err)
 	}
 
+	showtime, err := s.Querier.GetShowtimeById(context.Background(), showtimeId)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("failed to get showtime: %w", err)
+	}
+
+	err = s.RedisClient.Save(fmt.Sprintf("%s%s", global.SHOWTIME, strconv.Itoa(int(showtimeId))), showtime, two_days)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("failed to save showtime to redis: %w", err)
+	}
+
 	return http.StatusOK, nil
 }
 
@@ -135,9 +147,26 @@ func (s *showtimeService) GetShowtime(ctx context.Context, showtimeId int32) (in
 		return nil, http.StatusNotFound, fmt.Errorf("showtime with id %d does not exist", showtimeId)
 	}
 
-	showtime, err := s.Querier.GetShowtimeById(ctx, showtimeId)
+	var showtime sqlc.Showtimes
+	var key string = fmt.Sprintf("%s%d", global.SHOWTIME, showtimeId)
+
+	err = s.RedisClient.Get(key, &showtime)
 	if err != nil {
-		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get showtime: %w", err)
+		if err.Error() == fmt.Sprintf("key %s does not exist", key) {
+			queriedShowtime, err := s.Querier.GetShowtimeById(ctx, showtimeId)
+			if err != nil {
+				return nil, http.StatusInternalServerError, fmt.Errorf("failed to get showtime: %w", err)
+			}
+
+			savingErr := s.RedisClient.Save(key, &queriedShowtime, two_days)
+			if savingErr != nil {
+				return nil, http.StatusInternalServerError, fmt.Errorf("warning: failed to save to Redis: %v", savingErr)
+			}
+
+			return queriedShowtime, http.StatusOK, nil
+		}
+
+		return nil, http.StatusInternalServerError, fmt.Errorf("getting value occur an error: %w", err)
 	}
 
 	return showtime, http.StatusOK, nil
@@ -150,20 +179,37 @@ func (s *showtimeService) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, 
 		return nil, http.StatusBadRequest, err
 	}
 
-	showtimes, err := s.Querier.GetAllShowTimesByFilmIdInOneDate(ctx,
-		sqlc.GetAllShowTimesByFilmIdInOneDateParams{
-			FilmID: arg.FilmId,
-			ShowDate: pgtype.Date{
-				Time:  showDate,
-				Valid: true,
-			},
-		})
-	if err != nil {
-		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get showtimes: %w", err)
-	}
+	var key string = fmt.Sprintf("%s%d:%s", global.SHOWTIME_FILM_DATE, arg.FilmId, arg.ShowDate)
+	var showtimes []sqlc.Showtimes
 
-	if len(showtimes) == 0 {
-		return []interface{}{}, http.StatusNotFound, fmt.Errorf("no showtimes")
+	err = s.RedisClient.Get(key, &showtimes)
+	if err != nil {
+		if err.Error() == fmt.Sprintf("key %s does not exist", key) {
+			showtimes, err = s.Querier.GetAllShowTimesByFilmIdInOneDate(ctx,
+				sqlc.GetAllShowTimesByFilmIdInOneDateParams{
+					FilmID: arg.FilmId,
+					ShowDate: pgtype.Date{
+						Time:  showDate,
+						Valid: true,
+					},
+				})
+			if err != nil {
+				return nil, http.StatusInternalServerError, fmt.Errorf("failed to get showtimes: %w", err)
+			}
+
+			if len(showtimes) == 0 {
+				return []interface{}{}, http.StatusNotFound, fmt.Errorf("no showtimes")
+			}
+
+			savingErr := s.RedisClient.Save(key, &showtimes, two_days)
+			if savingErr != nil {
+				return nil, http.StatusInternalServerError, fmt.Errorf("warning: failed to save to Redis: %v", savingErr)
+			}
+
+			return showtimes, http.StatusOK, nil
+		}
+
+		return nil, http.StatusInternalServerError, fmt.Errorf("redis error: %w", err)
 	}
 
 	return showtimes, http.StatusOK, nil

@@ -53,6 +53,19 @@ func (q *Queries) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetA
 	return items, nil
 }
 
+const getFilmIdByShowtimeId = `-- name: GetFilmIdByShowtimeId :one
+SELECT film_id
+FROM showtimes
+WHERE id = $1
+`
+
+func (q *Queries) GetFilmIdByShowtimeId(ctx context.Context, id int32) (int32, error) {
+	row := q.db.QueryRow(ctx, getFilmIdByShowtimeId, id)
+	var film_id int32
+	err := row.Scan(&film_id)
+	return film_id, err
+}
+
 const getLatestShowtimeByAuditoriumId = `-- name: GetLatestShowtimeByAuditoriumId :one
 SELECT end_time
 FROM showtimes

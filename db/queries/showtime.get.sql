@@ -21,3 +21,4 @@ SELECT EXISTS (
 SELECT * 
 FROM showtimes 
 WHERE film_id = $1 AND show_date = $2;
+
