@@ -1,7 +1,7 @@
 -- name: GetShowtimeById :one
 SELECT *
 FROM showtimes
-WHERE id = $1
+WHERE id = $1 AND is_released = true
 LIMIT 1;
 
 -- name: GetLatestShowtimeByAuditoriumId :one
@@ -20,5 +20,10 @@ SELECT EXISTS (
 -- name: GetAllShowTimesByFilmIdInOneDate :many
 SELECT * 
 FROM showtimes 
-WHERE film_id = $1 AND show_date = $2;
+WHERE film_id = $1 AND show_date = $2 AND is_released = true;
+
+-- name: IsShowtimeRealeased :one
+SELECT is_released
+FROM showtimes
+WHERE id = $1;
 

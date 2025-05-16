@@ -28,7 +28,7 @@ const (
 )
 
 // AddShowtime implements services.IShowtime.
-func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowtimeRequest) (int, error) {
+func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowtimeReq) (int, error) {
 	isFilmExist, err := s.Querier.IsFilmIdExist(ctx, arg.FilmId)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("failed to check film existence: %w", err)
@@ -109,30 +109,56 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 	return http.StatusOK, nil
 }
 
-// TurnOnShowtime implements services.IShowtime.
-func (s *showtimeService) TurnOnShowtime(ctx context.Context, showtimeId int32) (int, error) {
-	isShowtimeExist, err := s.Querier.IsShowtimeExist(ctx, showtimeId)
+// ReleaseShowtime implements services.IShowtime.
+func (s *showtimeService) ReleaseShowtime(ctx context.Context, arg request.ReleaseShowtimeByIdReq) (int, error) {
+	isShowtimeDeleted, err := s.Querier.IsShowtimeRealeased(ctx, arg.ShowtimeId)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("failed to check showtime existence: %w", err)
 	}
-	if !isShowtimeExist {
-		return http.StatusNotFound, fmt.Errorf("showtime with id %d does not exist", showtimeId)
+	if isShowtimeDeleted {
+		return http.StatusBadRequest, fmt.Errorf("showtime have been released")
 	}
 
-	err = s.Querier.TurnOnShowtime(ctx, showtimeId)
+	err = s.Querier.ReleaseShowtime(ctx, arg.ShowtimeId)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("an error occur when querying db: %w", err)
 	}
 
-	showtime, err := s.Querier.GetShowtimeById(context.Background(), showtimeId)
+	err = s.Querier.UpdateShowtime(ctx, arg.ChangedBy)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("failed to update updater: %w", err)
+
+	}
+
+	err = s.Querier.CreateShowtimeSeats(ctx, arg.ShowtimeId)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("failed to create showtime seats: %w", err)
+	}
+
+	showtime, err := s.Querier.GetShowtimeById(context.Background(), arg.ShowtimeId)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("failed to get showtime: %w", err)
 	}
 
-	err = s.RedisClient.Save(fmt.Sprintf("%s%s", global.SHOWTIME, strconv.Itoa(int(showtimeId))), showtime, two_days)
-	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("failed to save showtime to redis: %w", err)
-	}
+	go func() {
+		showDate := showtime.ShowDate.Time.Format("2006-01-02")
+		showtimes, _ := s.Querier.GetAllShowTimesByFilmIdInOneDate(ctx,
+			sqlc.GetAllShowTimesByFilmIdInOneDateParams{
+				FilmID: showtime.FilmID,
+				ShowDate: pgtype.Date{
+					Time:  showtime.ShowDate.Time,
+					Valid: true,
+				},
+			})
+		key := fmt.Sprintf("%s%d::%s", global.SHOWTIME_FILM_DATE, showtime.FilmID, showDate)
+
+		_ = s.RedisClient.Delete(key)
+		_ = s.RedisClient.Save(key, showtimes, two_days)
+	}()
+
+	go func() {
+		_ = s.RedisClient.Save(fmt.Sprintf("%s%s", global.SHOWTIME, strconv.Itoa(int(arg.ShowtimeId))), showtime, two_days)
+	}()
 
 	return http.StatusOK, nil
 }
@@ -173,13 +199,13 @@ func (s *showtimeService) GetShowtime(ctx context.Context, showtimeId int32) (in
 }
 
 // GetAllShowTimesByFilmIdInOneDate implements services.IShowtime.
-func (s *showtimeService) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg request.GetAllShowTimesInOneDateRequest) (interface{}, int, error) {
+func (s *showtimeService) GetAllShowtimesByFilmIdInOneDate(ctx context.Context, arg request.GetAllShowtimesByFilmIdInOneDateReq) (interface{}, int, error) {
 	showDate, err := convertors.ConvertDateStringToTime(arg.ShowDate)
 	if err != nil {
 		return nil, http.StatusBadRequest, err
 	}
 
-	var key string = fmt.Sprintf("%s%d:%s", global.SHOWTIME_FILM_DATE, arg.FilmId, arg.ShowDate)
+	var key string = fmt.Sprintf("%s%d::%s", global.SHOWTIME_FILM_DATE, arg.FilmId, arg.ShowDate)
 	var showtimes []sqlc.Showtimes
 
 	err = s.RedisClient.Get(key, &showtimes)

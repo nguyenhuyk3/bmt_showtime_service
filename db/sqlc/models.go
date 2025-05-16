@@ -191,7 +191,7 @@ type Showtimes struct {
 	ShowDate     pgtype.Date      `json:"show_date"`
 	StartTime    pgtype.Timestamp `json:"start_time"`
 	EndTime      pgtype.Timestamp `json:"end_time"`
-	IsDeleted    bool             `json:"is_deleted"`
+	IsReleased   bool             `json:"is_released"`
 	ChangedBy    string           `json:"changed_by"`
 	CreatedAt    pgtype.Timestamp `json:"created_at"`
 	UpdatedAt    pgtype.Timestamp `json:"updated_at"`

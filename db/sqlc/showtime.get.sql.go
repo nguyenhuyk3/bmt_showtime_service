@@ -12,9 +12,9 @@ import (
 )
 
 const getAllShowTimesByFilmIdInOneDate = `-- name: GetAllShowTimesByFilmIdInOneDate :many
-SELECT id, film_id, auditorium_id, show_date, start_time, end_time, is_deleted, changed_by, created_at, updated_at 
+SELECT id, film_id, auditorium_id, show_date, start_time, end_time, is_released, changed_by, created_at, updated_at 
 FROM showtimes 
-WHERE film_id = $1 AND show_date = $2
+WHERE film_id = $1 AND show_date = $2 AND is_released = true
 `
 
 type GetAllShowTimesByFilmIdInOneDateParams struct {
@@ -38,7 +38,7 @@ func (q *Queries) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetA
 			&i.ShowDate,
 			&i.StartTime,
 			&i.EndTime,
-			&i.IsDeleted,
+			&i.IsReleased,
 			&i.ChangedBy,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -51,19 +51,6 @@ func (q *Queries) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetA
 		return nil, err
 	}
 	return items, nil
-}
-
-const getFilmIdByShowtimeId = `-- name: GetFilmIdByShowtimeId :one
-SELECT film_id
-FROM showtimes
-WHERE id = $1
-`
-
-func (q *Queries) GetFilmIdByShowtimeId(ctx context.Context, id int32) (int32, error) {
-	row := q.db.QueryRow(ctx, getFilmIdByShowtimeId, id)
-	var film_id int32
-	err := row.Scan(&film_id)
-	return film_id, err
 }
 
 const getLatestShowtimeByAuditoriumId = `-- name: GetLatestShowtimeByAuditoriumId :one
@@ -82,9 +69,9 @@ func (q *Queries) GetLatestShowtimeByAuditoriumId(ctx context.Context, auditoriu
 }
 
 const getShowtimeById = `-- name: GetShowtimeById :one
-SELECT id, film_id, auditorium_id, show_date, start_time, end_time, is_deleted, changed_by, created_at, updated_at
+SELECT id, film_id, auditorium_id, show_date, start_time, end_time, is_released, changed_by, created_at, updated_at
 FROM showtimes
-WHERE id = $1
+WHERE id = $1 AND is_released = true
 LIMIT 1
 `
 
@@ -98,7 +85,7 @@ func (q *Queries) GetShowtimeById(ctx context.Context, id int32) (Showtimes, err
 		&i.ShowDate,
 		&i.StartTime,
 		&i.EndTime,
-		&i.IsDeleted,
+		&i.IsReleased,
 		&i.ChangedBy,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -118,4 +105,17 @@ func (q *Queries) IsShowtimeExist(ctx context.Context, id int32) (bool, error) {
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const isShowtimeRealeased = `-- name: IsShowtimeRealeased :one
+SELECT is_released
+FROM showtimes
+WHERE id = $1
+`
+
+func (q *Queries) IsShowtimeRealeased(ctx context.Context, id int32) (bool, error) {
+	row := q.db.QueryRow(ctx, isShowtimeRealeased, id)
+	var is_released bool
+	err := row.Scan(&is_released)
+	return is_released, err
 }

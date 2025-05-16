@@ -26,7 +26,7 @@ func NewShowtimeController(
 }
 
 func (s *ShowtimeController) AddShowtime(c *gin.Context) {
-	var req request.AddShowtimeRequest
+	var req request.AddShowtimeReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		responses.FailureResponse(c, http.StatusBadRequest, fmt.Sprintf("invalid request: %v", err))
 		return
@@ -84,8 +84,8 @@ func (s *ShowtimeController) GetAllShowTimesByFilmIdInOneDate(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	showtimes, status, err := s.ShowtimeService.GetAllShowTimesByFilmIdInOneDate(ctx,
-		request.GetAllShowTimesInOneDateRequest{
+	showtimes, status, err := s.ShowtimeService.GetAllShowtimesByFilmIdInOneDate(ctx,
+		request.GetAllShowtimesByFilmIdInOneDateReq{
 			FilmId:   int32(filmId),
 			ShowDate: showDateStr,
 		})
@@ -95,4 +95,26 @@ func (s *ShowtimeController) GetAllShowTimesByFilmIdInOneDate(c *gin.Context) {
 	}
 
 	responses.SuccessResponse(c, status, "get all showtimes perform successfully", showtimes)
+}
+
+func (s *ShowtimeController) ReleaseShowtime(c *gin.Context) {
+	var req request.ReleaseShowtimeByIdReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		responses.FailureResponse(c, http.StatusBadRequest, fmt.Sprintf("invalid request: %v", err))
+		return
+	}
+
+	changedBy := c.GetString(global.X_USER_EMAIL)
+	req.ChangedBy = changedBy
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	status, err := s.ShowtimeService.ReleaseShowtime(ctx, req)
+	if err != nil {
+		responses.FailureResponse(c, status, err.Error())
+		return
+	}
+
+	responses.SuccessResponse(c, status, "release showtime perform successfully", nil)
 }

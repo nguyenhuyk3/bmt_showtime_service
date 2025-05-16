@@ -25,6 +25,9 @@ func (sr *ShowtimeRouter) InitShowtimeRouter(router *gin.RouterGroup) {
 			adminShowtimePrivateRouter.POST("/add",
 				getFromHeaderMiddleware.GetEmailFromHeader(),
 				showtimeController.AddShowtime)
+			adminShowtimePrivateRouter.POST("/release",
+				getFromHeaderMiddleware.GetEmailFromHeader(),
+				showtimeController.ReleaseShowtime)
 		}
 
 		showtimePublicRouter := showtimePublicRouter.Group("/public")

@@ -1,6 +1,6 @@
 package request
 
-type AddShowtimeRequest struct {
+type AddShowtimeReq struct {
 	FilmId       int32  `json:"film_id" binding:"required"`
 	AuditoriumId int32  `json:"auditorium_id" binding:"required"`
 	ShowDate     string `json:"show_date" binding:"required"`
@@ -9,7 +9,12 @@ type AddShowtimeRequest struct {
 	// EndTime      string `json:"end_time" binding:"required"`
 }
 
-type GetAllShowTimesInOneDateRequest struct {
+type GetAllShowtimesByFilmIdInOneDateReq struct {
 	FilmId   int32  `json:"film_id" binding:"required"`
 	ShowDate string `json:"show_date" binding:"required"`
+}
+
+type ReleaseShowtimeByIdReq struct {
+	ShowtimeId int32 `json:"showtime_id" binding:"required"`
+	ChangedBy  string
 }

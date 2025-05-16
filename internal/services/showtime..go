@@ -6,8 +6,8 @@ import (
 )
 
 type IShowtime interface {
-	AddShowtime(ctx context.Context, arg request.AddShowtimeRequest) (int, error)
-	TurnOnShowtime(ctx context.Context, showtimeId int32) (int, error)
+	AddShowtime(ctx context.Context, arg request.AddShowtimeReq) (int, error)
+	ReleaseShowtime(ctx context.Context, arg request.ReleaseShowtimeByIdReq) (int, error)
 	GetShowtime(ctx context.Context, showtimeId int32) (interface{}, int, error)
-	GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg request.GetAllShowTimesInOneDateRequest) (interface{}, int, error)
+	GetAllShowtimesByFilmIdInOneDate(ctx context.Context, arg request.GetAllShowtimesByFilmIdInOneDateReq) (interface{}, int, error)
 }

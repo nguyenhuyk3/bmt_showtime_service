@@ -51,7 +51,7 @@ CREATE TABLE "showtimes" (
   "show_date" date NOT NULL,
   "start_time" timestamp NOT NULL,
   "end_time" timestamp NOT NULL,
-  "is_deleted" boolean NOT NULL DEFAULT false,
+  "is_released" boolean NOT NULL DEFAULT false,
   "changed_by" varchar(32) NOT NULL,
   "created_at" timestamp DEFAULT (now()),
   "updated_at" timestamp DEFAULT (now())
@@ -94,7 +94,6 @@ ALTER TABLE "showtimes" ADD FOREIGN KEY ("auditorium_id") REFERENCES "auditorium
 ALTER TABLE "showtime_seats" ADD FOREIGN KEY ("showtime_id") REFERENCES "showtimes" ("id");
 
 ALTER TABLE "showtime_seats" ADD FOREIGN KEY ("seat_id") REFERENCES "seats" ("id");
-
 
 -- Addition commands
 ALTER TABLE showtimes
