@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS "showtimes";
 DROP TABLE IF EXISTS "seats";
 DROP TABLE IF EXISTS "auditoriums";
 DROP TABLE IF EXISTS "cinemas";
-DROP TABLE IF EXISTS "film_ids";
+DROP TABLE IF EXISTS "film_infos";
 
 DROP TYPE IF EXISTS "seat_statuses";
 DROP TYPE IF EXISTS "seat_types";

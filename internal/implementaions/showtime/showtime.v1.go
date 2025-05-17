@@ -50,6 +50,12 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 		return http.StatusBadRequest, err
 	}
 
+	if showDate.Day() == time.Now().Day() &&
+		showDate.Month() == time.Now().Month() &&
+		showDate.Year() == time.Now().Year() {
+		return http.StatusBadRequest, fmt.Errorf("cannot add showtime for today")
+	}
+
 	var startTime time.Time
 
 	latestShowtime, err := s.SqlStore.GetLatestShowtimeByAuditoriumId(ctx, arg.AuditoriumId)
@@ -113,6 +119,12 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 func (s *showtimeService) ReleaseShowtime(ctx context.Context, arg request.ReleaseShowtimeByIdReq) (int, error) {
 	err := s.SqlStore.ReleaseShowtimeTran(ctx, arg)
 	if err != nil {
+		if errors.Is(err, global.ErrNoShowtimeExist) {
+			return http.StatusNotFound, err
+		}
+		if errors.Is(err, global.ErrShowtimeHaveBeenReleased) {
+			return http.StatusBadRequest, err
+		}
 		return http.StatusInternalServerError, err
 	}
 
@@ -123,7 +135,7 @@ func (s *showtimeService) ReleaseShowtime(ctx context.Context, arg request.Relea
 
 	go func() {
 		showDate := showtime.ShowDate.Time.Format("2006-01-02")
-		showtimes, _ := s.SqlStore.GetAllShowTimesByFilmIdInOneDate(ctx,
+		showtimes, _ := s.SqlStore.GetAllShowTimesByFilmIdInOneDate(context.Background(),
 			sqlc.GetAllShowTimesByFilmIdInOneDateParams{
 				FilmID: showtime.FilmID,
 				ShowDate: pgtype.Date{
@@ -134,7 +146,7 @@ func (s *showtimeService) ReleaseShowtime(ctx context.Context, arg request.Relea
 		key := fmt.Sprintf("%s%d::%s", global.SHOWTIME_FILM_DATE, showtime.FilmID, showDate)
 
 		_ = s.RedisClient.Delete(key)
-		_ = s.RedisClient.Save(key, showtimes, two_days)
+		_ = s.RedisClient.Save(key, &showtimes, two_days)
 	}()
 
 	go func() {
@@ -162,6 +174,10 @@ func (s *showtimeService) GetShowtime(ctx context.Context, showtimeId int32) (in
 		if err.Error() == fmt.Sprintf("key %s does not exist", key) {
 			queriedShowtime, err := s.SqlStore.GetShowtimeById(ctx, showtimeId)
 			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return nil, http.StatusNotFound, fmt.Errorf("showtime with id %d does not release", showtimeId)
+				}
+
 				return nil, http.StatusInternalServerError, fmt.Errorf("failed to get showtime: %w", err)
 			}
 

@@ -2,7 +2,10 @@ package sqlc
 
 import (
 	"bmt_showtime_service/dto/request"
+	"bmt_showtime_service/global"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,12 +19,15 @@ type SqlStore struct {
 // ReleaseShowtimeTran implements IStore.
 func (s *SqlStore) ReleaseShowtimeTran(ctx context.Context, arg request.ReleaseShowtimeByIdReq) error {
 	err := s.execTran(ctx, func(q *Queries) error {
-		isShowtimeDeleted, err := q.isShowtimeRealeased(ctx, arg.ShowtimeId)
+		isShowtimeRealeased, err := q.isShowtimeRealeased(ctx, arg.ShowtimeId)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return global.ErrNoShowtimeExist
+			}
 			return fmt.Errorf("failed to check showtime existence: %w", err)
 		}
-		if isShowtimeDeleted {
-			return fmt.Errorf("showtime have been released")
+		if isShowtimeRealeased {
+			return global.ErrShowtimeHaveBeenReleased
 		}
 
 		err = q.releaseShowtime(ctx, arg.ShowtimeId)

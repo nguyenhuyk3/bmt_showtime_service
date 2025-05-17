@@ -21,6 +21,7 @@ CREATE TABLE "cinemas" (
   "name" text UNIQUE NOT NULL,
   "city" cities NOT NULL,
   "location" text NOT NULL,
+  "is_released" bool NOT NULL DEFAULT true,
   "created_at" timestamp DEFAULT (now()),
   "updated_at" timestamp DEFAULT (now())
 );
@@ -30,6 +31,7 @@ CREATE TABLE "auditoriums" (
   "cinema_id" int NOT NULL,
   "name" text NOT NULL,
   "seat_capacity" int NOT NULL DEFAULT 0,
+  "is_released" bool NOT NULL DEFAULT true,
   "created_at" timestamp DEFAULT (now()),
   "updated_at" timestamp DEFAULT (now())
 );

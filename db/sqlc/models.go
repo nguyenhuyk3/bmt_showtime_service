@@ -145,17 +145,19 @@ type Auditoriums struct {
 	CinemaID     int32            `json:"cinema_id"`
 	Name         string           `json:"name"`
 	SeatCapacity int32            `json:"seat_capacity"`
+	IsReleased   bool             `json:"is_released"`
 	CreatedAt    pgtype.Timestamp `json:"created_at"`
 	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
 }
 
 type Cinemas struct {
-	ID        int32            `json:"id"`
-	Name      string           `json:"name"`
-	City      Cities           `json:"city"`
-	Location  string           `json:"location"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID         int32            `json:"id"`
+	Name       string           `json:"name"`
+	City       Cities           `json:"city"`
+	Location   string           `json:"location"`
+	IsReleased bool             `json:"is_released"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
 }
 
 type FilmInfos struct {
