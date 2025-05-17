@@ -22,6 +22,7 @@ type Querier interface {
 	IsAuditoriumExist(ctx context.Context, id int32) (bool, error)
 	IsFilmIdExist(ctx context.Context, id int32) (bool, error)
 	IsShowtimeExist(ctx context.Context, id int32) (bool, error)
+	UpdateShowtimeSeatById(ctx context.Context, arg UpdateShowtimeSeatByIdParams) error
 	createShowtimeSeats(ctx context.Context, showtimeID int32) error
 	isShowtimeRealeased(ctx context.Context, id int32) (bool, error)
 	releaseShowtime(ctx context.Context, id int32) error

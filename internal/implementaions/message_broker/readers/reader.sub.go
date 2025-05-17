@@ -7,6 +7,7 @@ import (
 	"bmt_showtime_service/utils/convertors"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -40,19 +41,27 @@ func (m *MessageBrokerReader) startReader(topic string) {
 func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 	switch topic {
 	case global.NEW_FILM_WAS_CREATED_TOPIC:
-		var message messages.NewFilmCreationTopic
+		var message messages.NewFilmCreationMsg
 		if err := json.Unmarshal(value, &message); err != nil {
-			log.Printf("failed to unmarshal image message: %v\n", err)
+			log.Printf("failed to unmarshal new film creation message: %v\n", err)
 			return
 		}
 
 		m.handleNewFilmCreationTopic(message)
+	case global.SEAT_IS_BOOKED:
+		var message messages.SeatIsBookedMsg
+		if err := json.Unmarshal(value, &message); err != nil {
+			log.Printf("failed to unmarshal seat is booked message: %v\n", err)
+			return
+		}
+
+		m.handleSeatIsBookedTopic(message)
 	default:
 		log.Printf("unknown topic received: %s\n", topic)
 	}
 }
 
-func (m *MessageBrokerReader) handleNewFilmCreationTopic(message messages.NewFilmCreationTopic) {
+func (m *MessageBrokerReader) handleNewFilmCreationTopic(message messages.NewFilmCreationMsg) {
 	duration, err := convertors.ParseDurationToPGInterval(message.Duration)
 	if err != nil {
 		log.Printf("an error occurre when converting to duration: %v", err)
@@ -68,5 +77,36 @@ func (m *MessageBrokerReader) handleNewFilmCreationTopic(message messages.NewFil
 		log.Printf("an error occur when creating new film id: %v", err)
 	} else {
 		log.Println("create new film id successfully")
+	}
+}
+
+func (m *MessageBrokerReader) handleSeatIsBookedTopic(message messages.SeatIsBookedMsg) {
+	var status sqlc.NullSeatStatuses
+
+	err := status.Scan(message.Status)
+	if err != nil {
+		log.Printf("invalid status (%s): %v", message.Status, err)
+		return
+	}
+
+	err = m.SqlQuery.UpdateShowtimeSeatById(m.Context,
+		sqlc.UpdateShowtimeSeatByIdParams{
+			ID:     message.ShowtimeSeatId,
+			Status: status.SeatStatuses,
+		})
+	if err != nil {
+		log.Printf("an error occur when updating with seat id (%d): %v", message.ShowtimeSeatId, err)
+	} else {
+		log.Printf("update seat with id (%d) successfully", message.ShowtimeSeatId)
+
+		go func() {
+			showDate, _ := m.SqlQuery.GetShowdateByShowtimeId(context.Background(), message.ShowtimeSeatId)
+			showDateTime := showDate.Time.Truncate(24 * time.Hour)
+			key := fmt.Sprintf("%s%d::%s", global.SHOWTIME_SEATS, message.ShowtimeSeatId, showDateTime.Format("2006-01-02"))
+			seats, _ := m.SqlQuery.GetAllShowtimeSeatsByShowtimeId(context.Background(), message.ShowtimeSeatId)
+
+			_ = m.RedisClient.Delete(key)
+			_ = m.RedisClient.Save(key, &seats, 60*24*2)
+		}()
 	}
 }

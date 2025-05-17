@@ -3,24 +3,30 @@ package readers
 import (
 	"bmt_showtime_service/db/sqlc"
 	"bmt_showtime_service/global"
+	"bmt_showtime_service/internal/services"
 	"context"
 	"log"
 )
 
 type MessageBrokerReader struct {
-	SqlQuery sqlc.Querier
-	Context  context.Context
+	SqlQuery    sqlc.Querier
+	RedisClient services.IRedis
+	Context     context.Context
 }
 
 var topics = []string{
 	global.NEW_FILM_WAS_CREATED_TOPIC,
+	global.SEAT_IS_BOOKED,
 }
 
 func NewMessageBrokerReader(
 	sqlQuery *sqlc.Queries,
+	redisClient services.IRedis,
 ) *MessageBrokerReader {
 	return &MessageBrokerReader{
-		SqlQuery: sqlQuery,
+		SqlQuery:    sqlQuery,
+		RedisClient: redisClient,
+		Context:     context.Background(),
 	}
 }
 
