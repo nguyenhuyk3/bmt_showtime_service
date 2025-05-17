@@ -68,6 +68,19 @@ func (q *Queries) GetLatestShowtimeByAuditoriumId(ctx context.Context, auditoriu
 	return end_time, err
 }
 
+const getShowdateByShowtimeId = `-- name: GetShowdateByShowtimeId :one
+SELECT show_date
+FROM showtimes
+WHERE id = $1
+`
+
+func (q *Queries) GetShowdateByShowtimeId(ctx context.Context, id int32) (pgtype.Date, error) {
+	row := q.db.QueryRow(ctx, getShowdateByShowtimeId, id)
+	var show_date pgtype.Date
+	err := row.Scan(&show_date)
+	return show_date, err
+}
+
 const getShowtimeById = `-- name: GetShowtimeById :one
 SELECT id, film_id, auditorium_id, show_date, start_time, end_time, is_released, changed_by, created_at, updated_at
 FROM showtimes

@@ -27,3 +27,8 @@ SELECT is_released
 FROM showtimes
 WHERE id = $1;
 
+-- name: GetShowdateByShowtimeId :one
+SELECT show_date
+FROM showtimes
+WHERE id = $1;
+
