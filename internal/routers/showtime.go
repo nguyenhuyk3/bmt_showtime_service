@@ -1,12 +1,9 @@
 package routers
 
 import (
-	"bmt_showtime_service/db/sqlc"
-	"bmt_showtime_service/global"
-	"bmt_showtime_service/internal/controllers"
-	"bmt_showtime_service/internal/implementaions/redis"
-	"bmt_showtime_service/internal/implementaions/showtime"
+	"bmt_showtime_service/internal/injectors"
 	"bmt_showtime_service/internal/middlewares"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,15 +12,17 @@ type ShowtimeRouter struct {
 }
 
 func (sr *ShowtimeRouter) InitShowtimeRouter(router *gin.RouterGroup) {
-	sqlStore := sqlc.NewStore(global.Postgresql)
-	redisClient := redis.NewRedisClient()
-	showtimeService := showtime.NewShowtimeService(sqlStore, redisClient)
-	showtimeController := controllers.NewShowtimeController(showtimeService)
+	showtimeController, err := injectors.InitShowtimeController()
+	if err != nil {
+		log.Fatalf("failed to initialize ShowtimeController: %v", err)
+		return
+	}
+
 	getFromHeaderMiddleware := middlewares.NewGetFromHeaderMiddleware()
 
-	showtimePublicRouter := router.Group("/showtime")
+	showtimeRouter := router.Group("/showtime")
 	{
-		adminShowtimePrivateRouter := showtimePublicRouter.Group("/admin")
+		adminShowtimePrivateRouter := showtimeRouter.Group("/admin")
 		{
 			adminShowtimePrivateRouter.POST("/add",
 				getFromHeaderMiddleware.GetEmailFromHeader(),
@@ -33,7 +32,7 @@ func (sr *ShowtimeRouter) InitShowtimeRouter(router *gin.RouterGroup) {
 				showtimeController.ReleaseShowtime)
 		}
 
-		showtimePublicRouter := showtimePublicRouter.Group("/public")
+		showtimePublicRouter := showtimeRouter.Group("/public")
 		{
 			showtimePublicRouter.GET("/get/:showtime_id", showtimeController.GetShowTime)
 			showtimePublicRouter.GET("/get_all_showtimes", showtimeController.GetAllShowTimesByFilmIdInOneDate)

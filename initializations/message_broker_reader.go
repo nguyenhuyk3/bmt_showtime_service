@@ -1,15 +1,15 @@
 package initializations
 
 import (
-	"bmt_showtime_service/db/sqlc"
-	"bmt_showtime_service/global"
-	"bmt_showtime_service/internal/implementaions/message_broker/readers"
-	"bmt_showtime_service/internal/implementaions/redis"
+	"bmt_showtime_service/internal/injectors"
+	"log"
 )
 
 func initMessageBrokerReader() {
-	redisClient := redis.NewRedisClient()
-	reader := readers.NewMessageBrokerReader(sqlc.New(global.Postgresql), redisClient)
+	reader, err := injectors.InitMessageBroker()
+	if err != nil {
+		log.Fatalf("an error occur when initiallizating SHOWTIME READERS: %v", err)
+	}
 
 	reader.InitReaders()
 }

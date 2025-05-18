@@ -2,7 +2,7 @@ package readers
 
 import (
 	"bmt_showtime_service/db/sqlc"
-	"bmt_showtime_service/dto/messages"
+	"bmt_showtime_service/dto/message"
 	"bmt_showtime_service/global"
 	"bmt_showtime_service/utils/convertors"
 	"context"
@@ -41,7 +41,7 @@ func (m *MessageBrokerReader) startReader(topic string) {
 func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 	switch topic {
 	case global.NEW_FILM_WAS_CREATED_TOPIC:
-		var message messages.NewFilmCreationMsg
+		var message message.NewFilmCreationMsg
 		if err := json.Unmarshal(value, &message); err != nil {
 			log.Printf("failed to unmarshal new film creation message: %v\n", err)
 			return
@@ -49,7 +49,7 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 
 		m.handleNewFilmCreationTopic(message)
 	case global.SEAT_IS_BOOKED:
-		var message messages.SeatIsBookedMsg
+		var message message.SeatIsBookedMsg
 		if err := json.Unmarshal(value, &message); err != nil {
 			log.Printf("failed to unmarshal seat is booked message: %v\n", err)
 			return
@@ -61,7 +61,7 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 	}
 }
 
-func (m *MessageBrokerReader) handleNewFilmCreationTopic(message messages.NewFilmCreationMsg) {
+func (m *MessageBrokerReader) handleNewFilmCreationTopic(message message.NewFilmCreationMsg) {
 	duration, err := convertors.ParseDurationToPGInterval(message.Duration)
 	if err != nil {
 		log.Printf("an error occurre when converting to duration: %v", err)
@@ -80,7 +80,7 @@ func (m *MessageBrokerReader) handleNewFilmCreationTopic(message messages.NewFil
 	}
 }
 
-func (m *MessageBrokerReader) handleSeatIsBookedTopic(message messages.SeatIsBookedMsg) {
+func (m *MessageBrokerReader) handleSeatIsBookedTopic(message message.SeatIsBookedMsg) {
 	var status sqlc.NullSeatStatuses
 
 	err := status.Scan(message.Status)

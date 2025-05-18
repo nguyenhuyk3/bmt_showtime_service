@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -150,7 +149,8 @@ func (s *showtimeService) ReleaseShowtime(ctx context.Context, arg request.Relea
 	}()
 
 	go func() {
-		_ = s.RedisClient.Save(fmt.Sprintf("%s%s", global.SHOWTIME, strconv.Itoa(int(arg.ShowtimeId))), showtime, two_days)
+		_ = s.RedisClient.Save(fmt.Sprintf("%s%d", global.SHOWTIME, arg.ShowtimeId), showtime, two_days)
+		_ = s.RedisClient.Save(fmt.Sprintf("%s%d", global.SHOWTIME_ID, arg.ShowtimeId), arg.ShowtimeId, two_days)
 	}()
 
 	return http.StatusOK, nil
@@ -196,7 +196,9 @@ func (s *showtimeService) GetShowtime(ctx context.Context, showtimeId int32) (in
 }
 
 // GetAllShowTimesByFilmIdInOneDate implements services.IShowtime.
-func (s *showtimeService) GetAllShowtimesByFilmIdInOneDate(ctx context.Context, arg request.GetAllShowtimesByFilmIdInOneDateReq) (interface{}, int, error) {
+func (s *showtimeService) GetAllShowtimesByFilmIdInOneDate(
+	ctx context.Context,
+	arg request.GetAllShowtimesByFilmIdInOneDateReq) (interface{}, int, error) {
 	showDate, err := convertors.ConvertDateStringToTime(arg.ShowDate)
 	if err != nil {
 		return nil, http.StatusBadRequest, err

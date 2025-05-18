@@ -4,6 +4,7 @@ go 1.23.1
 
 require (
 	github.com/gin-gonic/gin v1.10.0
+	github.com/google/wire v0.6.0
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/redis/go-redis/v9 v9.8.0
 	github.com/segmentio/kafka-go v0.4.47

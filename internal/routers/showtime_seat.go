@@ -1,11 +1,8 @@
 package routers
 
 import (
-	"bmt_showtime_service/db/sqlc"
-	"bmt_showtime_service/global"
-	"bmt_showtime_service/internal/controllers"
-	"bmt_showtime_service/internal/implementaions/redis"
-	showtimeseat "bmt_showtime_service/internal/implementaions/showtime_seat"
+	"bmt_showtime_service/internal/injectors"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,10 +11,11 @@ type ShowtimeSeatRouter struct {
 }
 
 func (sr *ShowtimeSeatRouter) InitShowtimeSeatRouter(router *gin.RouterGroup) {
-	sqlStore := sqlc.NewStore(global.Postgresql)
-	redisClient := redis.NewRedisClient()
-	showtimeSeatService := showtimeseat.NewShowtimeSeatService(sqlStore, redisClient)
-	showtimeSeatController := controllers.NewShowtimeSeatController(showtimeSeatService)
+	showtimeSeatController, err := injectors.InitShowtimeSeatController()
+	if err != nil {
+		log.Fatalf("failed to initialize ShowtimeSeatController: %v", err)
+		return
+	}
 
 	showtimeSeatPublicRouter := router.Group("/showtime_seat")
 	{
