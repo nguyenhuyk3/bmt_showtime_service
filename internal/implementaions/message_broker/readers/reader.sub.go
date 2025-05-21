@@ -7,7 +7,6 @@ import (
 	"bmt_showtime_service/utils/convertors"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -48,14 +47,24 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 		}
 
 		m.handleNewFilmCreationTopic(message)
-	case global.SEAT_IS_BOOKED:
-		var message message.SeatIsBookedMsg
-		if err := json.Unmarshal(value, &message); err != nil {
+	case global.BMT_ORDER_PUBLIC_OUTBOXES:
+		var orderMessage message.BMTOrderPublicOutboxesMsg
+		if err := json.Unmarshal(value, &orderMessage); err != nil {
 			log.Printf("failed to unmarshal seat is booked message: %v\n", err)
 			return
 		}
 
-		m.handleSeatIsBookedTopic(message)
+		var payloadData message.PayloadData
+		if err := json.Unmarshal([]byte(orderMessage.After.Payload), &payloadData); err != nil {
+			log.Printf("failed to parse payload (%s): %v", global.ORDER_CREATED, err)
+			return
+		}
+
+		switch orderMessage.After.EventType {
+		case global.ORDER_CREATED:
+			m.handleOrderCreated(payloadData)
+		}
+
 	default:
 		log.Printf("unknown topic received: %s\n", topic)
 	}
@@ -80,33 +89,53 @@ func (m *MessageBrokerReader) handleNewFilmCreationTopic(message message.NewFilm
 	}
 }
 
-func (m *MessageBrokerReader) handleSeatIsBookedTopic(message message.SeatIsBookedMsg) {
-	var status sqlc.NullSeatStatuses
+// func (m *MessageBrokerReader) handleSeatIsBookedTopic(message message.SeatIsBookedMsg) {
+// 	var status sqlc.NullSeatStatuses
 
-	err := status.Scan(message.Status)
-	if err != nil {
-		log.Printf("invalid status (%s): %v", message.Status, err)
-		return
+// 	err := status.Scan(message.Status)
+// 	if err != nil {
+// 		log.Printf("invalid status (%s): %v", message.Status, err)
+// 		return
+// 	}
+
+// 	err = m.SqlQuery.UpdateShowtimeSeatById(m.Context,
+// 		sqlc.UpdateShowtimeSeatByIdParams{
+// 			ID:     message.ShowtimeSeatId,
+// 			Status: status.SeatStatuses,
+// 		})
+// 	if err != nil {
+// 		log.Printf("an error occur when updating with seat id (%d): %v", message.ShowtimeSeatId, err)
+// 	} else {
+// 		log.Printf("update seat with id (%d) successfully", message.ShowtimeSeatId)
+
+// 		go func() {
+// 			showDate, _ := m.SqlQuery.GetShowdateByShowtimeId(context.Background(), message.ShowtimeSeatId)
+// 			showDateTime := showDate.Time.Truncate(24 * time.Hour)
+// 			key := fmt.Sprintf("%s%d::%s", global.SHOWTIME_SEATS, message.ShowtimeSeatId, showDateTime.Format("2006-01-02"))
+// 			seats, _ := m.SqlQuery.GetAllShowtimeSeatsByShowtimeId(context.Background(), message.ShowtimeSeatId)
+
+// 			_ = m.RedisClient.Delete(key)
+// 			_ = m.RedisClient.Save(key, &seats, 60*24*2)
+// 		}()
+// 	}
+// }
+
+func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadData) {
+	for _, seat := range payload.Seats {
+		err := m.SqlQuery.UpdateShowtimeSeatSeatByIdAndShowtimeId(m.Context,
+			sqlc.UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
+				SeatID:     seat.SeatID,
+				Status:     sqlc.SeatStatusesReserved,
+				BookedBy:   payload.OrderedBy,
+				ShowtimeID: payload.ShowtimeId,
+			})
+
+		if err != nil {
+			log.Printf("an error occur when updating showtime seat %d: %v", seat.SeatID, err)
+			return
+		} else {
+			log.Printf("update showtime seat %d with showtime id %d successfully", seat.SeatID, payload.ShowtimeId)
+		}
 	}
 
-	err = m.SqlQuery.UpdateShowtimeSeatById(m.Context,
-		sqlc.UpdateShowtimeSeatByIdParams{
-			ID:     message.ShowtimeSeatId,
-			Status: status.SeatStatuses,
-		})
-	if err != nil {
-		log.Printf("an error occur when updating with seat id (%d): %v", message.ShowtimeSeatId, err)
-	} else {
-		log.Printf("update seat with id (%d) successfully", message.ShowtimeSeatId)
-
-		go func() {
-			showDate, _ := m.SqlQuery.GetShowdateByShowtimeId(context.Background(), message.ShowtimeSeatId)
-			showDateTime := showDate.Time.Truncate(24 * time.Hour)
-			key := fmt.Sprintf("%s%d::%s", global.SHOWTIME_SEATS, message.ShowtimeSeatId, showDateTime.Format("2006-01-02"))
-			seats, _ := m.SqlQuery.GetAllShowtimeSeatsByShowtimeId(context.Background(), message.ShowtimeSeatId)
-
-			_ = m.RedisClient.Delete(key)
-			_ = m.RedisClient.Save(key, &seats, 60*24*2)
-		}()
-	}
 }

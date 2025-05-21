@@ -9,21 +9,27 @@ import (
 	"context"
 )
 
-const updateShowtimeSeatById = `-- name: UpdateShowtimeSeatById :exec
+const updateShowtimeSeatSeatByIdAndShowtimeId = `-- name: UpdateShowtimeSeatSeatByIdAndShowtimeId :exec
 UPDATE showtime_seats
 SET status = $2,
     booked_by = $3,
-    booked_at = CASE WHEN $2 = 'booked' THEN NOW() ELSE NULL END
-WHERE id = $1
+    booked_at = CASE WHEN $2 = 'booked'::seat_statuses THEN NOW() ELSE NULL::timestamp END
+WHERE seat_id = $1 AND showtime_id = $4
 `
 
-type UpdateShowtimeSeatByIdParams struct {
-	ID       int32        `json:"id"`
-	Status   SeatStatuses `json:"status"`
-	BookedBy string       `json:"booked_by"`
+type UpdateShowtimeSeatSeatByIdAndShowtimeIdParams struct {
+	SeatID     int32        `json:"seat_id"`
+	Status     SeatStatuses `json:"status"`
+	BookedBy   string       `json:"booked_by"`
+	ShowtimeID int32        `json:"showtime_id"`
 }
 
-func (q *Queries) UpdateShowtimeSeatById(ctx context.Context, arg UpdateShowtimeSeatByIdParams) error {
-	_, err := q.db.Exec(ctx, updateShowtimeSeatById, arg.ID, arg.Status, arg.BookedBy)
+func (q *Queries) UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx context.Context, arg UpdateShowtimeSeatSeatByIdAndShowtimeIdParams) error {
+	_, err := q.db.Exec(ctx, updateShowtimeSeatSeatByIdAndShowtimeId,
+		arg.SeatID,
+		arg.Status,
+		arg.BookedBy,
+		arg.ShowtimeID,
+	)
 	return err
 }

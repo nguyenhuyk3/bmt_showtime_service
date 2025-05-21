@@ -57,8 +57,14 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 
 	var startTime time.Time
 
-	latestShowtime, err := s.SqlStore.GetLatestShowtimeByAuditoriumId(ctx, arg.AuditoriumId)
-
+	latestShowtime, err := s.SqlStore.GetLatestShowtimeByAuditoriumId(ctx,
+		sqlc.GetLatestShowtimeByAuditoriumIdParams{
+			AuditoriumID: arg.AuditoriumId,
+			ShowDate: pgtype.Date{
+				Time:  showDate,
+				Valid: true,
+			},
+		})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			startTime = time.Date(

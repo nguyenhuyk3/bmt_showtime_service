@@ -56,13 +56,18 @@ func (q *Queries) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetA
 const getLatestShowtimeByAuditoriumId = `-- name: GetLatestShowtimeByAuditoriumId :one
 SELECT end_time
 FROM showtimes
-WHERE auditorium_id = $1
+WHERE auditorium_id = $1 AND show_date = $2
 ORDER BY created_at DESC
 LIMIT 1
 `
 
-func (q *Queries) GetLatestShowtimeByAuditoriumId(ctx context.Context, auditoriumID int32) (pgtype.Timestamp, error) {
-	row := q.db.QueryRow(ctx, getLatestShowtimeByAuditoriumId, auditoriumID)
+type GetLatestShowtimeByAuditoriumIdParams struct {
+	AuditoriumID int32       `json:"auditorium_id"`
+	ShowDate     pgtype.Date `json:"show_date"`
+}
+
+func (q *Queries) GetLatestShowtimeByAuditoriumId(ctx context.Context, arg GetLatestShowtimeByAuditoriumIdParams) (pgtype.Timestamp, error) {
+	row := q.db.QueryRow(ctx, getLatestShowtimeByAuditoriumId, arg.AuditoriumID, arg.ShowDate)
 	var end_time pgtype.Timestamp
 	err := row.Scan(&end_time)
 	return end_time, err

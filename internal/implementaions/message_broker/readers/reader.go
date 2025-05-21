@@ -16,7 +16,7 @@ type MessageBrokerReader struct {
 
 var topics = []string{
 	global.NEW_FILM_WAS_CREATED_TOPIC,
-	global.SEAT_IS_BOOKED,
+	global.BMT_ORDER_PUBLIC_OUTBOXES,
 }
 
 func NewMessageBrokerReader(
@@ -31,7 +31,7 @@ func NewMessageBrokerReader(
 }
 
 func (m *MessageBrokerReader) InitReaders() {
-	log.Printf("=============== Showtime Service is listening to messages about new film creation ... ===============\n\n\n")
+	log.Printf("=============== Showtime Service is listening to messages ... ===============\n\n\n")
 
 	for _, topic := range topics {
 		go m.startReader(topic)
