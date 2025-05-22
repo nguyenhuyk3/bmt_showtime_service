@@ -19,9 +19,10 @@ import (
 // Injectors from message_broker.wire.go:
 
 func InitMessageBroker() (*readers.MessageBrokerReader, error) {
-	queries := provider.ProvideQueries()
+	pool := provider.ProvidePgxPool()
+	iStore := sqlc.NewStore(pool)
 	iRedis := redis.NewRedisClient()
-	messageBrokerReader := readers.NewMessageBrokerReader(queries, iRedis)
+	messageBrokerReader := readers.NewMessageBrokerReader(iStore, iRedis)
 	return messageBrokerReader, nil
 }
 

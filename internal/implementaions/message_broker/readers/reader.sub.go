@@ -47,23 +47,55 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 		}
 
 		m.handleNewFilmCreationTopic(message)
-	case global.BMT_ORDER_PUBLIC_OUTBOXES:
-		var orderMessage message.BMTOrderPublicOutboxesMsg
-		if err := json.Unmarshal(value, &orderMessage); err != nil {
-			log.Printf("failed to unmarshal seat is booked message: %v\n", err)
-			return
-		}
 
-		var payloadData message.PayloadData
-		if err := json.Unmarshal([]byte(orderMessage.After.Payload), &payloadData); err != nil {
-			log.Printf("failed to parse payload (%s): %v", global.ORDER_CREATED, err)
+	// this case will handle messages from Order service
+	case global.BMT_ORDER_PUBLIC_OUTBOXES:
+		var orderMessage message.BMTPublicOutboxesMsg
+		if err := json.Unmarshal(value, &orderMessage); err != nil {
+			log.Printf("failed to unmarshal order message: %v\n", err)
 			return
 		}
 
 		switch orderMessage.After.EventType {
+		// change seat status available -> reserved
 		case global.ORDER_CREATED:
-			m.handleOrderCreated(payloadData)
+			var payloadOrderData message.PayloadOrderData
+			if err := json.Unmarshal([]byte(orderMessage.After.Payload), &payloadOrderData); err != nil {
+				log.Printf("failed to parse payload (%s): %v", orderMessage.After.EventType, err)
+				return
+			}
+
+			m.handleOrderCreated(payloadOrderData)
+
+		// change seat status reserved -> available
+		case global.ORDER_FAILED:
+			var payloadSubOrderData message.PayloadSubOrderData
+			if err := json.Unmarshal([]byte(orderMessage.After.Payload), &payloadSubOrderData); err != nil {
+				log.Printf("failed to parse payload (%s): %v", orderMessage.After.EventType, err)
+				return
+			}
+
+			m.handleOrderFailed(payloadSubOrderData, global.ORDER_SUCCESS)
+
+		// change seat status reserved -> booked
+		case global.ORDER_SUCCESS:
+			var payloadSubOrderData message.PayloadSubOrderData
+			if err := json.Unmarshal([]byte(orderMessage.After.Payload), &payloadSubOrderData); err != nil {
+				log.Printf("failed to parse payload (%s): %v", orderMessage.After.EventType, err)
+				return
+			}
+
+			m.handleOrderSuccess(payloadSubOrderData, global.ORDER_SUCCESS)
 		}
+
+	// case global.BMT_PAYMENT_PUBLIC_OUTBOXES:
+	// 	var paymentMessage message.BMTPublicOutboxesMsg
+	// 	if err := json.Unmarshal(value, &paymentMessage); err != nil {
+	// 		log.Printf("failed to unmarshal payment message: %v\n", err)
+	// 		return
+	// 	}
+
+	// 	m.handlePaymentStatusEvent(paymentMessage)
 
 	default:
 		log.Printf("unknown topic received: %s\n", topic)
@@ -89,53 +121,87 @@ func (m *MessageBrokerReader) handleNewFilmCreationTopic(message message.NewFilm
 	}
 }
 
-// func (m *MessageBrokerReader) handleSeatIsBookedTopic(message message.SeatIsBookedMsg) {
-// 	var status sqlc.NullSeatStatuses
-
-// 	err := status.Scan(message.Status)
-// 	if err != nil {
-// 		log.Printf("invalid status (%s): %v", message.Status, err)
-// 		return
-// 	}
-
-// 	err = m.SqlQuery.UpdateShowtimeSeatById(m.Context,
-// 		sqlc.UpdateShowtimeSeatByIdParams{
-// 			ID:     message.ShowtimeSeatId,
-// 			Status: status.SeatStatuses,
-// 		})
-// 	if err != nil {
-// 		log.Printf("an error occur when updating with seat id (%d): %v", message.ShowtimeSeatId, err)
-// 	} else {
-// 		log.Printf("update seat with id (%d) successfully", message.ShowtimeSeatId)
-
-// 		go func() {
-// 			showDate, _ := m.SqlQuery.GetShowdateByShowtimeId(context.Background(), message.ShowtimeSeatId)
-// 			showDateTime := showDate.Time.Truncate(24 * time.Hour)
-// 			key := fmt.Sprintf("%s%d::%s", global.SHOWTIME_SEATS, message.ShowtimeSeatId, showDateTime.Format("2006-01-02"))
-// 			seats, _ := m.SqlQuery.GetAllShowtimeSeatsByShowtimeId(context.Background(), message.ShowtimeSeatId)
-
-// 			_ = m.RedisClient.Delete(key)
-// 			_ = m.RedisClient.Save(key, &seats, 60*24*2)
-// 		}()
-// 	}
-// }
-
-func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadData) {
+func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadOrderData) {
 	for _, seat := range payload.Seats {
 		err := m.SqlQuery.UpdateShowtimeSeatSeatByIdAndShowtimeId(m.Context,
 			sqlc.UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
-				SeatID:     seat.SeatID,
+				SeatID:     seat.SeatId,
 				Status:     sqlc.SeatStatusesReserved,
 				BookedBy:   payload.OrderedBy,
 				ShowtimeID: payload.ShowtimeId,
 			})
 
 		if err != nil {
-			log.Printf("an error occur when updating showtime seat %d: %v", seat.SeatID, err)
+			log.Printf("an error occur when updating showtime seat %d: %v", seat.SeatId, err)
 			return
 		} else {
-			log.Printf("update showtime seat %d with showtime id %d successfully", seat.SeatID, payload.ShowtimeId)
+			log.Printf("update showtime seat %d with showtime id %d successfully (reserved)", seat.SeatId, payload.ShowtimeId)
 		}
 	}
 
 }
+
+func (m *MessageBrokerReader) handleOrderFailed(payload message.PayloadSubOrderData, status string) {
+	err := m.SqlQuery.UpdateSeatStatusTran(m.Context, payload, status)
+	if err != nil {
+		log.Printf("%v", err)
+	}
+}
+
+func (m *MessageBrokerReader) handleOrderSuccess(payload message.PayloadSubOrderData, status string) {
+	err := m.SqlQuery.UpdateSeatStatusTran(m.Context, payload, status)
+	if err != nil {
+		log.Printf("%v", err)
+	}
+}
+
+// func (m *MessageBrokerReader) handlePaymentStatusEvent(messageData message.BMTPublicOutboxesMsg) {
+// 	var payload message.PayloadPaymentData
+// 	if err := json.Unmarshal([]byte(messageData.After.Payload), &payload); err != nil {
+// 		log.Printf("failed to parse payload (%s): %v", messageData.After.EventType, err)
+// 		return
+// 	}
+
+// 	orderRedisKey := fmt.Sprintf("%s%d", global.ORDER, payload.OrderId)
+
+// 	var subOrder request.SubOrder
+// 	if err := m.RedisClient.Get(orderRedisKey, &subOrder); err != nil {
+// 		log.Printf("failed to get data with key %s", orderRedisKey)
+// 		return
+// 	}
+
+// 	var status sqlc.SeatStatuses
+// 	var bookedBy *string
+
+// 	switch messageData.After.EventType {
+// 	// If payment is successful, change seat from reserved -> booked
+// 	case global.PAYMENT_SUCCESS:
+// 		status = sqlc.SeatStatusesBooked
+// 	// If payment is failed, change seat from reserved -> available, booked_by -> empty string
+// 	case global.PAYMENT_FAILED:
+// 		status = sqlc.SeatStatusesAvailable
+// 		empty := ""
+// 		bookedBy = &empty
+// 	default:
+// 		log.Printf("unsupported event type: %s", messageData.After.EventType)
+// 		return
+// 	}
+
+// 	for _, seat := range subOrder.Seats {
+// 		param := sqlc.UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
+// 			SeatID:     seat.SeatId,
+// 			Status:     status,
+// 			ShowtimeID: subOrder.ShowtimeId,
+// 		}
+// 		if bookedBy != nil {
+// 			param.BookedBy = *bookedBy
+// 		}
+
+// 		if err := m.SqlQuery.UpdateShowtimeSeatSeatByIdAndShowtimeId(m.Context, param); err != nil {
+// 			log.Printf("error updating seat %d: %v", seat.SeatId, err)
+// 			return
+// 		}
+
+// 		log.Printf("seat %d updated for showtime %d to status %s", seat.SeatId, subOrder.ShowtimeId, status)
+// 	}
+// }

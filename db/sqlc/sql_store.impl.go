@@ -1,12 +1,14 @@
 package sqlc
 
 import (
+	"bmt_showtime_service/dto/message"
 	"bmt_showtime_service/dto/request"
 	"bmt_showtime_service/global"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -53,6 +55,46 @@ func (s *SqlStore) ReleaseShowtimeTran(ctx context.Context, arg request.ReleaseS
 	})
 
 	return err
+}
+
+// UpdateSeatStatus implements IStore.
+func (s *SqlStore) UpdateSeatStatusTran(ctx context.Context, arg message.PayloadSubOrderData, seatStatus string) error {
+	return s.execTran(ctx, func(q *Queries) error {
+		var (
+			status   SeatStatuses
+			bookedBy *string
+		)
+
+		switch seatStatus {
+		case global.ORDER_FAILED:
+			status = SeatStatusesAvailable
+			empty := ""
+			bookedBy = &empty
+		case global.ORDER_SUCCESS:
+			status = SeatStatusesBooked
+		default:
+			return fmt.Errorf("invalid seat status: %s", seatStatus)
+		}
+
+		for _, seat := range arg.Seats {
+			param := UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
+				SeatID:     seat.SeatId,
+				Status:     status,
+				ShowtimeID: arg.ShowtimeId,
+			}
+			if bookedBy != nil {
+				param.BookedBy = *bookedBy
+			}
+
+			if err := q.UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx, param); err != nil {
+				log.Printf("failed to update seat %d for showtime %d (%s): %v", seat.SeatId, arg.ShowtimeId, seatStatus, err)
+			} else {
+				log.Printf("updated seat %d for showtime %d (%s) successfully", seat.SeatId, arg.ShowtimeId, seatStatus)
+			}
+		}
+
+		return nil
+	})
 }
 
 func (s *SqlStore) execTran(ctx context.Context, fn func(*Queries) error) error {

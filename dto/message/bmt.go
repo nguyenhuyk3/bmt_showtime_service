@@ -1,6 +1,6 @@
 package message
 
-type BMTOrderPublicOutboxesMsg struct {
+type BMTPublicOutboxesMsg struct {
 	// Before interface{}  `json:"before"`
 	After AfterPayload `json:"after"`
 	// Source      SourceInfo   `json:"source"`
@@ -9,24 +9,6 @@ type BMTOrderPublicOutboxesMsg struct {
 	// TsUs        int64        `json:"ts_us"`
 	// TsNs        int64        `json:"ts_ns"`
 	// Transaction interface{}  `json:"transaction"`
-}
-
-type PayloadData struct {
-	Fab        []FabItem  `json:"fab"`
-	Note       string     `json:"note"`
-	Seats      []SeatItem `json:"seats"`
-	OrderedBy  string     `json:"OrderedBy"`
-	ShowDate   string     `json:"show_date"`
-	ShowtimeId int32      `json:"showtime_id"`
-}
-
-type FabItem struct {
-	FabID    int32 `json:"fab_id"`
-	Quantity int32 `json:"quantity"`
-}
-
-type SeatItem struct {
-	SeatID int32 `json:"seat_id"`
 }
 
 type AfterPayload struct {

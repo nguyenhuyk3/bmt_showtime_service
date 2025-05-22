@@ -9,7 +9,7 @@ import (
 )
 
 type MessageBrokerReader struct {
-	SqlQuery    sqlc.Querier
+	SqlQuery    sqlc.IStore
 	RedisClient services.IRedis
 	Context     context.Context
 }
@@ -20,7 +20,7 @@ var topics = []string{
 }
 
 func NewMessageBrokerReader(
-	sqlQuery *sqlc.Queries,
+	sqlQuery sqlc.IStore,
 	redisClient services.IRedis,
 ) *MessageBrokerReader {
 	return &MessageBrokerReader{
