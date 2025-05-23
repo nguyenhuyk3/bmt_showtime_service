@@ -1,9 +1,11 @@
 package message
 
 type PayloadOrderData struct {
-	Seats      []SeatItem `json:"seats"`
-	OrderedBy  string     `json:"ordered_by"`
-	ShowtimeId int32      `json:"showtime_id"`
+	OrderId    int32      `json:"order_id" binding:"required"`
+	ShowtimeId int32      `json:"showtime_id" binding:"required"`
+	OrderedBy  string     `json:"ordered_by" binding:"required"`
+	Seats      []SeatItem `json:"seats" binding:"required"`
+	FABs       []FabItem  `json:"fabs" binding:"required"`
 }
 
 type PayloadSubOrderData struct {

@@ -10,4 +10,5 @@ type IStore interface {
 	Querier
 	ReleaseShowtimeTran(ctx context.Context, arg request.ReleaseShowtimeByIdReq) error
 	UpdateSeatStatusTran(ctx context.Context, arg message.PayloadSubOrderData, seatStatus string) error
+	HandleOrderCreatedTran(ctx context.Context, arg message.PayloadOrderData) (int32, error)
 }

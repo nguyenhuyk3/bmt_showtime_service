@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -60,42 +59,88 @@ func (s *SqlStore) ReleaseShowtimeTran(ctx context.Context, arg request.ReleaseS
 // UpdateSeatStatus implements IStore.
 func (s *SqlStore) UpdateSeatStatusTran(ctx context.Context, arg message.PayloadSubOrderData, seatStatus string) error {
 	return s.execTran(ctx, func(q *Queries) error {
-		var (
-			status   SeatStatuses
-			bookedBy *string
-		)
-
 		switch seatStatus {
 		case global.ORDER_FAILED:
-			status = SeatStatusesAvailable
-			empty := ""
-			bookedBy = &empty
+			for _, seat := range arg.Seats {
+				param := UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
+					SeatID:     seat.SeatId,
+					Status:     SeatStatusesAvailable,
+					BookedBy:   "",
+					ShowtimeID: arg.ShowtimeId,
+				}
+
+				if err := q.UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx, param); err != nil {
+					return fmt.Errorf("failed to update seat %d for showtime %d (%s): %w", seat.SeatId, arg.ShowtimeId, seatStatus, err)
+				}
+			}
 		case global.ORDER_SUCCESS:
-			status = SeatStatusesBooked
+			for _, seat := range arg.Seats {
+				param := UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
+					SeatID:     seat.SeatId,
+					Status:     SeatStatusesBooked,
+					ShowtimeID: arg.ShowtimeId,
+				}
+
+				if err := q.UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx, param); err != nil {
+					return fmt.Errorf("failed to update seat %d for showtime %d (%s): %w", seat.SeatId, arg.ShowtimeId, seatStatus, err)
+				}
+			}
 
 		default:
 			return fmt.Errorf("invalid seat status: %s", seatStatus)
 		}
 
+		return nil
+	})
+}
+
+// HandleOrderCreatedTran implements IStore.
+func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.PayloadOrderData) (int32, error) {
+	var totalPrice int32 = 0
+
+	err := s.execTran(ctx, func(q *Queries) error {
 		for _, seat := range arg.Seats {
-			param := UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
-				SeatID:     seat.SeatId,
-				Status:     status,
-				ShowtimeID: arg.ShowtimeId,
+			err := q.UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx,
+				UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
+					SeatID:     seat.SeatId,
+					Status:     SeatStatusesReserved,
+					BookedBy:   arg.OrderedBy,
+					ShowtimeID: arg.ShowtimeId,
+				})
+			if err != nil {
+				return fmt.Errorf("an error occur when updating showtime seat %d: %w", seat.SeatId, err)
 			}
-			if bookedBy != nil {
-				param.BookedBy = *bookedBy
+			// else {
+			// 	return log.Printf("update showtime seat %d with showtime id %d successfully (reserved)", seat.SeatId, payload.ShowtimeId)
+			// }
+
+			seatPrice, err := q.GetPriceOfSeatBySeatId(ctx, seat.SeatId)
+			if err != nil {
+				return fmt.Errorf("an error occur when get price of seat by id (%d): %w", seat.SeatId, err)
 			}
 
-			if err := q.UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx, param); err != nil {
-				log.Printf("failed to update seat %d for showtime %d (%s): %v", seat.SeatId, arg.ShowtimeId, seatStatus, err)
-			} else {
-				log.Printf("updated seat %d for showtime %d (%s) successfully", seat.SeatId, arg.ShowtimeId, seatStatus)
+			totalPrice = totalPrice + seatPrice
+		}
+
+		if len(arg.FABs) != 0 {
+			for _, fAB := range arg.FABs {
+				fABPrice, err := q.GetPriceOfFAB(ctx, fAB.FabId)
+				if err != nil {
+					return fmt.Errorf("an error occur when get price of fab by id (%d): %w", fAB.FabId, err)
+				}
+
+				totalPrice = totalPrice + fABPrice
 			}
 		}
 
 		return nil
 	})
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to update seat status tran: %w", err)
+	}
+
+	return totalPrice, nil
 }
 
 func (s *SqlStore) execTran(ctx context.Context, fn func(*Queries) error) error {

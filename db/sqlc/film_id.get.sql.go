@@ -26,12 +26,12 @@ func (q *Queries) GetDuration(ctx context.Context, filmID int32) (pgtype.Interva
 
 const isFilmIdExist = `-- name: IsFilmIdExist :one
 SELECT EXISTS (
-    SELECT 1 FROM "film_infos" WHERE id = $1
+    SELECT 1 FROM "film_infos" WHERE film_id = $1
 ) AS EXISTS
 `
 
-func (q *Queries) IsFilmIdExist(ctx context.Context, id int32) (bool, error) {
-	row := q.db.QueryRow(ctx, isFilmIdExist, id)
+func (q *Queries) IsFilmIdExist(ctx context.Context, filmID int32) (bool, error) {
+	row := q.db.QueryRow(ctx, isFilmIdExist, filmID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err

@@ -9,14 +9,14 @@ import (
 	"context"
 )
 
-const getPriceOfSeatBySeatIdAndShowtimeId = `-- name: GetPriceOfSeatBySeatIdAndShowtimeId :one
+const getPriceOfSeatBySeatId = `-- name: GetPriceOfSeatBySeatId :one
 SELECT price
 FROM seats
 WHERE id = $1
 `
 
-func (q *Queries) GetPriceOfSeatBySeatIdAndShowtimeId(ctx context.Context, id int32) (int32, error) {
-	row := q.db.QueryRow(ctx, getPriceOfSeatBySeatIdAndShowtimeId, id)
+func (q *Queries) GetPriceOfSeatBySeatId(ctx context.Context, id int32) (int32, error) {
+	row := q.db.QueryRow(ctx, getPriceOfSeatBySeatId, id)
 	var price int32
 	err := row.Scan(&price)
 	return price, err

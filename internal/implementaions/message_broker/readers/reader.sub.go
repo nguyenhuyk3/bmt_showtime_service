@@ -11,6 +11,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -85,7 +86,7 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 				return
 			}
 
-			m.handleOrderCreated(payloadOrderData, orderMessage.After.AggregatedId)
+			m.handleOrderCreated(payloadOrderData)
 
 		// change seat status reserved -> available
 		case global.ORDER_FAILED:
@@ -148,35 +149,17 @@ func (m *MessageBrokerReader) hanleFABCreation(payload message.NewFABCreateMsg) 
 	}
 }
 
-func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadOrderData, orderId int32) {
-	var totalPrice int32 = 0
-
-	for _, seat := range payload.Seats {
-		err := m.SqlQuery.UpdateShowtimeSeatSeatByIdAndShowtimeId(m.Context,
-			sqlc.UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
-				SeatID:     seat.SeatId,
-				Status:     sqlc.SeatStatusesReserved,
-				BookedBy:   payload.OrderedBy,
-				ShowtimeID: payload.ShowtimeId,
-			})
-		if err != nil {
-			log.Printf("an error occur when updating showtime seat %d: %v", seat.SeatId, err)
-			return
-		} else {
-			log.Printf("update showtime seat %d with showtime id %d successfully (reserved)", seat.SeatId, payload.ShowtimeId)
-		}
-
-		seatPrice, err := m.SqlQuery.GetPriceOfSeatBySeatIdAndShowtimeId(m.Context, seat.SeatId)
-		if err != nil {
-			log.Printf("an error occur when get price of seat by id (%d): %v", seat.SeatId, err)
-			return
-		}
-
-		totalPrice = totalPrice + seatPrice
+func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadOrderData) {
+	totalPrice, err := m.SqlQuery.HandleOrderCreatedTran(m.Context, payload)
+	if err != nil {
+		log.Printf("%v", err)
+		return
 	}
 
 	if totalPrice != 0 {
-		_ = m.RedisClient.Save(fmt.Sprintf("%s%d", global.ORDER_TOTAL, orderId), totalPrice, 5)
+		_ = m.RedisClient.Save(fmt.Sprintf("%s%d", global.ORDER_TOTAL, payload.OrderId), gin.H{
+			"total_price": totalPrice,
+		}, 5)
 	}
 }
 
@@ -184,6 +167,8 @@ func (m *MessageBrokerReader) handleOrderFailed(payload message.PayloadSubOrderD
 	err := m.SqlQuery.UpdateSeatStatusTran(m.Context, payload, status)
 	if err != nil {
 		log.Printf("%v", err)
+	} else {
+		log.Printf("handle update seat status successfully (%d)- (%s)", payload.OrderId, status)
 	}
 }
 
@@ -191,5 +176,7 @@ func (m *MessageBrokerReader) handleOrderSuccess(payload message.PayloadSubOrder
 	err := m.SqlQuery.UpdateSeatStatusTran(m.Context, payload, status)
 	if err != nil {
 		log.Printf("%v", err)
+	} else {
+		log.Printf("handle update seat status successfully (%d)- (%s)", payload.OrderId, status)
 	}
 }
