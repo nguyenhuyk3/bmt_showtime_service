@@ -37,7 +37,7 @@ func (s *ShowtimeSeatService) GetAllShowtimeSeatsByShowtimeId(ctx context.Contex
 		return nil, http.StatusBadRequest, fmt.Errorf("cannot get showtime seats for past date (%s)", showDateTime.Format("2006-01-02"))
 	}
 
-	var seats []sqlc.ShowtimeSeats
+	var seats []sqlc.ShowtimeSeat
 	var key string = fmt.Sprintf("%s%d::%s", global.SHOWTIME_SEATS, showtimeId, showDateTime.Format("2006-01-02"))
 
 	err = s.RedisClient.Get(key, &seats)

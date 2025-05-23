@@ -140,7 +140,7 @@ func (ns NullSeatTypes) Value() (driver.Value, error) {
 	return string(ns.SeatTypes), nil
 }
 
-type Auditoriums struct {
+type Auditorium struct {
 	ID           int32            `json:"id"`
 	CinemaID     int32            `json:"cinema_id"`
 	Name         string           `json:"name"`
@@ -150,7 +150,7 @@ type Auditoriums struct {
 	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
 }
 
-type Cinemas struct {
+type Cinema struct {
 	ID         int32            `json:"id"`
 	Name       string           `json:"name"`
 	City       Cities           `json:"city"`
@@ -160,13 +160,29 @@ type Cinemas struct {
 	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
 }
 
-type FilmInfos struct {
+type FabInfo struct {
+	ID        int32 `json:"id"`
+	FabID     int32 `json:"fab_id"`
+	Price     int32 `json:"price"`
+	IsDeleted bool  `json:"is_deleted"`
+}
+
+type FilmInfo struct {
 	ID       int32           `json:"id"`
 	FilmID   int32           `json:"film_id"`
 	Duration pgtype.Interval `json:"duration"`
 }
 
-type Seats struct {
+type Outbox struct {
+	ID             pgtype.UUID      `json:"id"`
+	AggregatedType string           `json:"aggregated_type"`
+	AggregatedID   int32            `json:"aggregated_id"`
+	EventType      string           `json:"event_type"`
+	Payload        []byte           `json:"payload"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+}
+
+type Seat struct {
 	ID           int32            `json:"id"`
 	AuditoriumID int32            `json:"auditorium_id"`
 	SeatNumber   string           `json:"seat_number"`
@@ -176,17 +192,7 @@ type Seats struct {
 	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
 }
 
-type ShowtimeSeats struct {
-	ID         int32            `json:"id"`
-	ShowtimeID int32            `json:"showtime_id"`
-	SeatID     int32            `json:"seat_id"`
-	Status     SeatStatuses     `json:"status"`
-	BookedBy   string           `json:"booked_by"`
-	CreatedAt  pgtype.Timestamp `json:"created_at"`
-	BookedAt   pgtype.Timestamp `json:"booked_at"`
-}
-
-type Showtimes struct {
+type Showtime struct {
 	ID           int32            `json:"id"`
 	FilmID       int32            `json:"film_id"`
 	AuditoriumID int32            `json:"auditorium_id"`
@@ -197,4 +203,14 @@ type Showtimes struct {
 	ChangedBy    string           `json:"changed_by"`
 	CreatedAt    pgtype.Timestamp `json:"created_at"`
 	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
+}
+
+type ShowtimeSeat struct {
+	ID         int32            `json:"id"`
+	ShowtimeID int32            `json:"showtime_id"`
+	SeatID     int32            `json:"seat_id"`
+	Status     SeatStatuses     `json:"status"`
+	BookedBy   string           `json:"booked_by"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	BookedAt   pgtype.Timestamp `json:"booked_at"`
 }

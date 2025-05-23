@@ -72,6 +72,7 @@ func (s *SqlStore) UpdateSeatStatusTran(ctx context.Context, arg message.Payload
 			bookedBy = &empty
 		case global.ORDER_SUCCESS:
 			status = SeatStatusesBooked
+
 		default:
 			return fmt.Errorf("invalid seat status: %s", seatStatus)
 		}

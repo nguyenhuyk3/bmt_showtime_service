@@ -22,15 +22,15 @@ type GetAllShowTimesByFilmIdInOneDateParams struct {
 	ShowDate pgtype.Date `json:"show_date"`
 }
 
-func (q *Queries) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdInOneDateParams) ([]Showtimes, error) {
+func (q *Queries) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdInOneDateParams) ([]Showtime, error) {
 	rows, err := q.db.Query(ctx, getAllShowTimesByFilmIdInOneDate, arg.FilmID, arg.ShowDate)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Showtimes{}
+	items := []Showtime{}
 	for rows.Next() {
-		var i Showtimes
+		var i Showtime
 		if err := rows.Scan(
 			&i.ID,
 			&i.FilmID,
@@ -93,9 +93,9 @@ WHERE id = $1 AND is_released = true
 LIMIT 1
 `
 
-func (q *Queries) GetShowtimeById(ctx context.Context, id int32) (Showtimes, error) {
+func (q *Queries) GetShowtimeById(ctx context.Context, id int32) (Showtime, error) {
 	row := q.db.QueryRow(ctx, getShowtimeById, id)
-	var i Showtimes
+	var i Showtime
 	err := row.Scan(
 		&i.ID,
 		&i.FilmID,

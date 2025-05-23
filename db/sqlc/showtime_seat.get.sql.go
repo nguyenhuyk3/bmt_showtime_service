@@ -15,15 +15,15 @@ FROM showtime_seats
 WHERE showtime_id = $1
 `
 
-func (q *Queries) GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeID int32) ([]ShowtimeSeats, error) {
+func (q *Queries) GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeID int32) ([]ShowtimeSeat, error) {
 	rows, err := q.db.Query(ctx, getAllShowtimeSeatsByShowtimeId, showtimeID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ShowtimeSeats{}
+	items := []ShowtimeSeat{}
 	for rows.Next() {
-		var i ShowtimeSeats
+		var i ShowtimeSeat
 		if err := rows.Scan(
 			&i.ID,
 			&i.ShowtimeID,

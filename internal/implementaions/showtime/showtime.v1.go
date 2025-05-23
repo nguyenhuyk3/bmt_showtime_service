@@ -172,7 +172,7 @@ func (s *showtimeService) GetShowtime(ctx context.Context, showtimeId int32) (in
 		return nil, http.StatusNotFound, fmt.Errorf("showtime with id %d does not exist", showtimeId)
 	}
 
-	var showtime sqlc.Showtimes
+	var showtime sqlc.Showtime
 	var key string = fmt.Sprintf("%s%d", global.SHOWTIME, showtimeId)
 
 	err = s.RedisClient.Get(key, &showtime)
@@ -211,7 +211,7 @@ func (s *showtimeService) GetAllShowtimesByFilmIdInOneDate(
 	}
 
 	var key string = fmt.Sprintf("%s%d::%s", global.SHOWTIME_FILM_DATE, arg.FilmId, arg.ShowDate)
-	var showtimes []sqlc.Showtimes
+	var showtimes []sqlc.Showtime
 
 	err = s.RedisClient.Get(key, &showtimes)
 	if err != nil {

@@ -6,4 +6,5 @@ const (
 
 	BMT_ORDER_PUBLIC_OUTBOXES   = "bmt_order.public.outboxes"
 	BMT_PAYMENT_PUBLIC_OUTBOXES = "bmt_payment.public.outboxes"
+	BMT_PRODUCT_PUBLIC_OUTBOXES = "bmt_product.public.outboxes"
 )

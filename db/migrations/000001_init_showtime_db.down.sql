@@ -4,6 +4,8 @@ DROP TABLE IF EXISTS "seats";
 DROP TABLE IF EXISTS "auditoriums";
 DROP TABLE IF EXISTS "cinemas";
 DROP TABLE IF EXISTS "film_infos";
+DROP TABLE IF EXISTS "fab_infos";
+DROP TABLE IF EXISTS "outboxes";
 
 DROP TYPE IF EXISTS "seat_statuses";
 DROP TYPE IF EXISTS "seat_types";

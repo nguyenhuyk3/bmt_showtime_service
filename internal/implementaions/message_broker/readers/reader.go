@@ -15,8 +15,8 @@ type MessageBrokerReader struct {
 }
 
 var topics = []string{
-	global.NEW_FILM_WAS_CREATED_TOPIC,
 	global.BMT_ORDER_PUBLIC_OUTBOXES,
+	global.BMT_PRODUCT_PUBLIC_OUTBOXES,
 }
 
 func NewMessageBrokerReader(

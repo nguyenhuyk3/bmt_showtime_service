@@ -7,4 +7,8 @@ const (
 
 	PAYMENT_SUCCESS = "payment_success"
 	PAYMENT_FAILED  = "payment_failed"
+
+	FILM_CREATED = "film_created"
+
+	FAB_CREATED = "fab_created"
 )

@@ -75,6 +75,22 @@ CREATE TABLE "film_infos" (
   "duration" interval NOT NULL
 );
 
+CREATE TABLE "fab_infos" (
+  "id" serial PRIMARY KEY,
+  "fab_id" int UNIQUE NOT NULL,
+  "price" int NOT NULL DEFAULT 0,
+  "is_deleted" boolean NOT NULL DEFAULT false
+);
+
+CREATE TABLE "outboxes" (
+  "id" uuid PRIMARY KEY NOT NULL DEFAULT (gen_random_uuid()),
+  "aggregated_type" varchar(64) NOT NULL,
+  "aggregated_id" int NOT NULL,
+  "event_type" varchar(64) NOT NULL,
+  "payload" jsonb NOT NULL,
+  "created_at" timestamp NOT NULL DEFAULT (now())
+);
+
 CREATE INDEX ON "cinemas" ("id", "name");
 
 CREATE INDEX ON "auditoriums" ("id", "cinema_id");
@@ -87,6 +103,8 @@ CREATE INDEX ON "showtimes" ("auditorium_id");
 
 CREATE UNIQUE INDEX ON "showtime_seats" ("showtime_id", "seat_id");
 
+CREATE INDEX ON "outboxes" ("aggregated_type", "aggregated_id");
+
 ALTER TABLE "auditoriums" ADD FOREIGN KEY ("cinema_id") REFERENCES "cinemas" ("id");
 
 ALTER TABLE "seats" ADD FOREIGN KEY ("auditorium_id") REFERENCES "auditoriums" ("id");
@@ -96,6 +114,8 @@ ALTER TABLE "showtimes" ADD FOREIGN KEY ("auditorium_id") REFERENCES "auditorium
 ALTER TABLE "showtime_seats" ADD FOREIGN KEY ("showtime_id") REFERENCES "showtimes" ("id");
 
 ALTER TABLE "showtime_seats" ADD FOREIGN KEY ("seat_id") REFERENCES "seats" ("id");
+
+CREATE PUBLICATION showtime_dbz_publication FOR TABLE outboxes;
 
 -- Addition commands
 ALTER TABLE showtimes
@@ -115,11 +135,11 @@ VALUES
         'Vincom Landmark 81'
     );
 
-INSERT INTO film_infos (film_id, duration)
-VALUES
-  (1, INTERVAL '1 hour 31 minutes'),
-  (2, INTERVAL '1 hour 45 minutes'),
-  (3, INTERVAL '2 hours 10 minutes');
+-- INSERT INTO film_infos (film_id, duration)
+-- VALUES
+--   (1, INTERVAL '1 hour 31 minutes'),
+--   (2, INTERVAL '1 hour 45 minutes'),
+--   (3, INTERVAL '2 hours 10 minutes');
 
 INSERT INTO
     "auditoriums" ("cinema_id", "name", "seat_capacity")

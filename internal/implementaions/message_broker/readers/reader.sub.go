@@ -7,6 +7,7 @@ import (
 	"bmt_showtime_service/utils/convertors"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -39,14 +40,33 @@ func (m *MessageBrokerReader) startReader(topic string) {
 
 func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 	switch topic {
-	case global.NEW_FILM_WAS_CREATED_TOPIC:
-		var message message.NewFilmCreationMsg
-		if err := json.Unmarshal(value, &message); err != nil {
-			log.Printf("failed to unmarshal new film creation message: %v\n", err)
+	case global.BMT_PRODUCT_PUBLIC_OUTBOXES:
+		var productMessage message.BMTPublicOutboxesMsg
+		if err := json.Unmarshal(value, &productMessage); err != nil {
+			log.Printf("failed to unmarshal new film updating message: %v\n", err)
 			return
 		}
 
-		m.handleNewFilmCreationTopic(message)
+		switch productMessage.After.EventType {
+		case global.FILM_CREATED:
+			var payloadProductFilmData message.NewFilmCreationMsg
+			if err := json.Unmarshal([]byte(productMessage.After.Payload), &payloadProductFilmData); err != nil {
+				log.Printf("failed to parse payload (%s): %v", productMessage.After.EventType, err)
+				return
+			}
+
+			m.handleFilmCreation(payloadProductFilmData)
+		case global.FAB_CREATED:
+			var payloadProductFABData message.NewFABCreateMsg
+			if err := json.Unmarshal([]byte(productMessage.After.Payload), &payloadProductFABData); err != nil {
+				log.Printf("failed to parse payload (%s): %v", productMessage.After.EventType, err)
+				return
+			}
+
+			m.hanleFABCreation(payloadProductFABData)
+		default:
+			log.Printf("unknown event type received: %s\n", productMessage.After.EventType)
+		}
 
 	// this case will handle messages from Order service
 	case global.BMT_ORDER_PUBLIC_OUTBOXES:
@@ -65,7 +85,7 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 				return
 			}
 
-			m.handleOrderCreated(payloadOrderData)
+			m.handleOrderCreated(payloadOrderData, orderMessage.After.AggregatedId)
 
 		// change seat status reserved -> available
 		case global.ORDER_FAILED:
@@ -86,23 +106,17 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 			}
 
 			m.handleOrderSuccess(payloadSubOrderData, global.ORDER_SUCCESS)
+
+		default:
+			log.Printf("unknown event type received: %s\n", orderMessage.After.EventType)
 		}
-
-	// case global.BMT_PAYMENT_PUBLIC_OUTBOXES:
-	// 	var paymentMessage message.BMTPublicOutboxesMsg
-	// 	if err := json.Unmarshal(value, &paymentMessage); err != nil {
-	// 		log.Printf("failed to unmarshal payment message: %v\n", err)
-	// 		return
-	// 	}
-
-	// 	m.handlePaymentStatusEvent(paymentMessage)
 
 	default:
 		log.Printf("unknown topic received: %s\n", topic)
 	}
 }
 
-func (m *MessageBrokerReader) handleNewFilmCreationTopic(message message.NewFilmCreationMsg) {
+func (m *MessageBrokerReader) handleFilmCreation(message message.NewFilmCreationMsg) {
 	duration, err := convertors.ParseDurationToPGInterval(message.Duration)
 	if err != nil {
 		log.Printf("an error occurre when converting to duration: %v", err)
@@ -115,13 +129,28 @@ func (m *MessageBrokerReader) handleNewFilmCreationTopic(message message.NewFilm
 			Duration: duration,
 		})
 	if err != nil {
-		log.Printf("an error occur when creating new film id: %v", err)
+		log.Printf("an error occur when creating new film id (%d): %v", message.FilmId, err)
 	} else {
-		log.Println("create new film id successfully")
+		log.Printf("create new film id (%d) successfully", message.FilmId)
 	}
 }
 
-func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadOrderData) {
+func (m *MessageBrokerReader) hanleFABCreation(payload message.NewFABCreateMsg) {
+	err := m.SqlQuery.CreateNewFABInfo(m.Context,
+		sqlc.CreateNewFABInfoParams{
+			FabID: payload.FABId,
+			Price: payload.Price,
+		})
+	if err != nil {
+		log.Printf("an error occur when creating new fab id (%d): %v", payload.FABId, err)
+	} else {
+		log.Printf("create new fab id (%d) successfully", payload.FABId)
+	}
+}
+
+func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadOrderData, orderId int32) {
+	var totalPrice int32 = 0
+
 	for _, seat := range payload.Seats {
 		err := m.SqlQuery.UpdateShowtimeSeatSeatByIdAndShowtimeId(m.Context,
 			sqlc.UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
@@ -130,15 +159,25 @@ func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadOrderDat
 				BookedBy:   payload.OrderedBy,
 				ShowtimeID: payload.ShowtimeId,
 			})
-
 		if err != nil {
 			log.Printf("an error occur when updating showtime seat %d: %v", seat.SeatId, err)
 			return
 		} else {
 			log.Printf("update showtime seat %d with showtime id %d successfully (reserved)", seat.SeatId, payload.ShowtimeId)
 		}
+
+		seatPrice, err := m.SqlQuery.GetPriceOfSeatBySeatIdAndShowtimeId(m.Context, seat.SeatId)
+		if err != nil {
+			log.Printf("an error occur when get price of seat by id (%d): %v", seat.SeatId, err)
+			return
+		}
+
+		totalPrice = totalPrice + seatPrice
 	}
 
+	if totalPrice != 0 {
+		_ = m.RedisClient.Save(fmt.Sprintf("%s%d", global.ORDER_TOTAL, orderId), totalPrice, 5)
+	}
 }
 
 func (m *MessageBrokerReader) handleOrderFailed(payload message.PayloadSubOrderData, status string) {
@@ -154,54 +193,3 @@ func (m *MessageBrokerReader) handleOrderSuccess(payload message.PayloadSubOrder
 		log.Printf("%v", err)
 	}
 }
-
-// func (m *MessageBrokerReader) handlePaymentStatusEvent(messageData message.BMTPublicOutboxesMsg) {
-// 	var payload message.PayloadPaymentData
-// 	if err := json.Unmarshal([]byte(messageData.After.Payload), &payload); err != nil {
-// 		log.Printf("failed to parse payload (%s): %v", messageData.After.EventType, err)
-// 		return
-// 	}
-
-// 	orderRedisKey := fmt.Sprintf("%s%d", global.ORDER, payload.OrderId)
-
-// 	var subOrder request.SubOrder
-// 	if err := m.RedisClient.Get(orderRedisKey, &subOrder); err != nil {
-// 		log.Printf("failed to get data with key %s", orderRedisKey)
-// 		return
-// 	}
-
-// 	var status sqlc.SeatStatuses
-// 	var bookedBy *string
-
-// 	switch messageData.After.EventType {
-// 	// If payment is successful, change seat from reserved -> booked
-// 	case global.PAYMENT_SUCCESS:
-// 		status = sqlc.SeatStatusesBooked
-// 	// If payment is failed, change seat from reserved -> available, booked_by -> empty string
-// 	case global.PAYMENT_FAILED:
-// 		status = sqlc.SeatStatusesAvailable
-// 		empty := ""
-// 		bookedBy = &empty
-// 	default:
-// 		log.Printf("unsupported event type: %s", messageData.After.EventType)
-// 		return
-// 	}
-
-// 	for _, seat := range subOrder.Seats {
-// 		param := sqlc.UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
-// 			SeatID:     seat.SeatId,
-// 			Status:     status,
-// 			ShowtimeID: subOrder.ShowtimeId,
-// 		}
-// 		if bookedBy != nil {
-// 			param.BookedBy = *bookedBy
-// 		}
-
-// 		if err := m.SqlQuery.UpdateShowtimeSeatSeatByIdAndShowtimeId(m.Context, param); err != nil {
-// 			log.Printf("error updating seat %d: %v", seat.SeatId, err)
-// 			return
-// 		}
-
-// 		log.Printf("seat %d updated for showtime %d to status %s", seat.SeatId, subOrder.ShowtimeId, status)
-// 	}
-// }
