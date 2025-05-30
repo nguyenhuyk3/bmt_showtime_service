@@ -9,12 +9,15 @@ import (
 	"errors"
 	"fmt"
 
+	"product"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type SqlStore struct {
 	connPool *pgxpool.Pool
 	*Queries
+	ProductClient product.ProductClient
 }
 
 // ReleaseShowtimeTran implements IStore.
@@ -97,7 +100,7 @@ func (s *SqlStore) UpdateSeatStatusTran(ctx context.Context, arg message.Payload
 
 // HandleOrderCreatedTran implements IStore.
 func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.PayloadOrderData) (int32, error) {
-	var totalPrice int32 = 0
+	var totalPrice int32 = -1
 
 	err := s.execTran(ctx, func(q *Queries) error {
 		for _, seat := range arg.Seats {
@@ -120,17 +123,20 @@ func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.Paylo
 				return fmt.Errorf("an error occur when get price of seat by id (%d): %w", seat.SeatId, err)
 			}
 
+			//
 			totalPrice = totalPrice + seatPrice
 		}
 
 		if len(arg.FABs) != 0 {
 			for _, fAB := range arg.FABs {
-				fABPrice, err := q.GetPriceOfFAB(ctx, fAB.FabId)
+				resp, err := s.ProductClient.GetPriceOfFAB(ctx, &product.GetPriceOfFABReq{
+					FABId: fAB.FabId,
+				})
 				if err != nil {
 					return fmt.Errorf("an error occur when get price of fab by id (%d): %w", fAB.FabId, err)
 				}
 
-				totalPrice = totalPrice + fABPrice
+				totalPrice = totalPrice + resp.Price
 			}
 		}
 
@@ -138,7 +144,7 @@ func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.Paylo
 	})
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to update seat status tran: %w", err)
+		return -1, fmt.Errorf("failed to update seat status tran: %w", err)
 	}
 
 	return totalPrice, nil
@@ -166,9 +172,12 @@ func (s *SqlStore) execTran(ctx context.Context, fn func(*Queries) error) error 
 	return tran.Commit(ctx)
 }
 
-func NewStore(connPool *pgxpool.Pool) IStore {
+func NewStore(
+	connPool *pgxpool.Pool,
+	productClient product.ProductClient) IStore {
 	return &SqlStore{
-		connPool: connPool,
-		Queries:  New(connPool),
+		connPool:      connPool,
+		Queries:       New(connPool),
+		ProductClient: productClient,
 	}
 }

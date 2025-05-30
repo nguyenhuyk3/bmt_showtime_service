@@ -5,6 +5,7 @@ import (
 	"bmt_showtime_service/global"
 	"log"
 	"product"
+	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
@@ -19,11 +20,18 @@ func ProvideQueries() *sqlc.Queries {
 	return sqlc.New(global.Postgresql)
 }
 
-func ProvideFilmClient() product.ProductClient {
-	conn, err := grpc.Dial("localhost:50033", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("can not connect to 50051: %v", err)
-	}
+var (
+	filmClient     product.ProductClient
+	filmClientOnce sync.Once
+)
 
-	return product.NewProductClient(conn)
+func ProvideFilmClient() product.ProductClient {
+	filmClientOnce.Do(func() {
+		conn, err := grpc.Dial("localhost:50033", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Fatalf("cannot connect to product service on port 50033: %v", err)
+		}
+		filmClient = product.NewProductClient(conn)
+	})
+	return filmClient
 }

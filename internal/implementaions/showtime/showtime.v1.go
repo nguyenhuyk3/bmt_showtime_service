@@ -31,12 +31,14 @@ const (
 
 // AddShowtime implements services.IShowtime.
 func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowtimeReq) (int, error) {
-	isFilmExist, err := s.SqlStore.IsFilmIdExist(ctx, arg.FilmId)
+	// This code will also check if the film exists or not.
+	resp, err := s.ProductClient.GetFilmDuration(ctx, &product.GetFilmDurationReq{FilmId: arg.FilmId})
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("failed to check film existence: %w", err)
-	}
-	if !isFilmExist {
-		return http.StatusNotFound, fmt.Errorf("film doesn't exist")
+		if errors.Is(err, fmt.Errorf("film with %d doesn't exist", arg.FilmId)) {
+			return http.StatusNotFound, err
+		}
+
+		return http.StatusInternalServerError, fmt.Errorf("failed to get film duration: %w", err)
 	}
 
 	isAuditoriumExist, err := s.SqlStore.IsAuditoriumExist(ctx, arg.AuditoriumId)
@@ -86,13 +88,6 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 		}
 		startTime = latestShowtime.Time.Add(time_off)
 	}
-
-	resp, err := s.ProductClient.GetFilmDuration(ctx, &product.GetFilmDurationReq{FilmId: arg.FilmId})
-	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("failed to get film duration: %w", err)
-	}
-
-	fmt.Println(resp)
 
 	filmDuration, err := convertors.ParseDurationToPGInterval(resp.FilmDuration)
 	if err != nil {

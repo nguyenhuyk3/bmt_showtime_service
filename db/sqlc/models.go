@@ -160,19 +160,6 @@ type Cinema struct {
 	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
 }
 
-type FabInfo struct {
-	ID        int32 `json:"id"`
-	FabID     int32 `json:"fab_id"`
-	Price     int32 `json:"price"`
-	IsDeleted bool  `json:"is_deleted"`
-}
-
-type FilmInfo struct {
-	ID       int32           `json:"id"`
-	FilmID   int32           `json:"film_id"`
-	Duration pgtype.Interval `json:"duration"`
-}
-
 type Outbox struct {
 	ID             pgtype.UUID      `json:"id"`
 	AggregatedType string           `json:"aggregated_type"`

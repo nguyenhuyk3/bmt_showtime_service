@@ -1,7 +1,6 @@
 package readers
 
 import (
-	"bmt_showtime_service/db/sqlc"
 	"bmt_showtime_service/dto/message"
 	"bmt_showtime_service/global"
 	"context"
@@ -56,14 +55,14 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 		// 	}
 
 		// 	m.handleFilmCreation(payloadProductFilmData)
-		case global.FAB_CREATED:
-			var payloadProductFABData message.NewFABCreateMsg
-			if err := json.Unmarshal([]byte(productMessage.After.Payload), &payloadProductFABData); err != nil {
-				log.Printf("failed to parse payload (%s): %v", productMessage.After.EventType, err)
-				return
-			}
+		// case global.FAB_CREATED:
+		// var payloadProductFABData message.NewFABCreateMsg
+		// if err := json.Unmarshal([]byte(productMessage.After.Payload), &payloadProductFABData); err != nil {
+		// 	log.Printf("failed to parse payload (%s): %v", productMessage.After.EventType, err)
+		// 	return
+		// }
 
-			m.hanleFABCreation(payloadProductFABData)
+		// m.hanleFABCreation(payloadProductFABData)
 		default:
 			log.Printf("unknown event type received: %s\n", productMessage.After.EventType)
 		}
@@ -135,18 +134,18 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 // 	}
 // }
 
-func (m *MessageBrokerReader) hanleFABCreation(payload message.NewFABCreateMsg) {
-	err := m.SqlQuery.CreateNewFABInfo(m.Context,
-		sqlc.CreateNewFABInfoParams{
-			FabID: payload.FABId,
-			Price: payload.Price,
-		})
-	if err != nil {
-		log.Printf("an error occur when creating new fab id (%d): %v", payload.FABId, err)
-	} else {
-		log.Printf("create new fab id (%d) successfully", payload.FABId)
-	}
-}
+// func (m *MessageBrokerReader) hanleFABCreation(payload message.NewFABCreateMsg) {
+// 	err := m.SqlQuery.CreateNewFABInfo(m.Context,
+// 		sqlc.CreateNewFABInfoParams{
+// 			FabID: payload.FABId,
+// 			Price: payload.Price,
+// 		})
+// 	if err != nil {
+// 		log.Printf("an error occur when creating new fab id (%d): %v", payload.FABId, err)
+// 	} else {
+// 		log.Printf("create new fab id (%d) successfully", payload.FABId)
+// 	}
+// }
 
 func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadOrderData) {
 	totalPrice, err := m.SqlQuery.HandleOrderCreatedTran(m.Context, payload)

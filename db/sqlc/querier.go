@@ -11,20 +11,15 @@ import (
 )
 
 type Querier interface {
-	CreateNewFABInfo(ctx context.Context, arg CreateNewFABInfoParams) error
-	CreateNewFilmId(ctx context.Context, arg CreateNewFilmIdParams) error
 	CreateOutbox(ctx context.Context, arg CreateOutboxParams) error
 	CreateShowTime(ctx context.Context, arg CreateShowTimeParams) error
 	GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdInOneDateParams) ([]Showtime, error)
 	GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeID int32) ([]ShowtimeSeat, error)
-	GetDuration(ctx context.Context, filmID int32) (pgtype.Interval, error)
 	GetLatestShowtimeByAuditoriumId(ctx context.Context, arg GetLatestShowtimeByAuditoriumIdParams) (pgtype.Timestamp, error)
-	GetPriceOfFAB(ctx context.Context, fabID int32) (int32, error)
 	GetPriceOfSeatBySeatId(ctx context.Context, id int32) (int32, error)
 	GetShowdateByShowtimeId(ctx context.Context, id int32) (pgtype.Date, error)
 	GetShowtimeById(ctx context.Context, id int32) (Showtime, error)
 	IsAuditoriumExist(ctx context.Context, id int32) (bool, error)
-	IsFilmIdExist(ctx context.Context, filmID int32) (bool, error)
 	IsShowtimeExist(ctx context.Context, id int32) (bool, error)
 	UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx context.Context, arg UpdateShowtimeSeatSeatByIdAndShowtimeIdParams) error
 	createShowtimeSeats(ctx context.Context, showtimeID int32) error

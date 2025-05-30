@@ -20,7 +20,8 @@ import (
 
 func InitMessageBroker() (*readers.MessageBrokerReader, error) {
 	pool := provider.ProvidePgxPool()
-	iStore := sqlc.NewStore(pool)
+	productClient := provider.ProvideFilmClient()
+	iStore := sqlc.NewStore(pool, productClient)
 	iRedis := redis.NewRedisClient()
 	messageBrokerReader := readers.NewMessageBrokerReader(iStore, iRedis)
 	return messageBrokerReader, nil
@@ -30,9 +31,9 @@ func InitMessageBroker() (*readers.MessageBrokerReader, error) {
 
 func InitShowtimeController() (*controllers.ShowtimeController, error) {
 	pool := provider.ProvidePgxPool()
-	iStore := sqlc.NewStore(pool)
-	iRedis := redis.NewRedisClient()
 	productClient := provider.ProvideFilmClient()
+	iStore := sqlc.NewStore(pool, productClient)
+	iRedis := redis.NewRedisClient()
 	iShowtime := showtime.NewShowtimeService(iStore, iRedis, productClient)
 	showtimeController := controllers.NewShowtimeController(iShowtime)
 	return showtimeController, nil
@@ -42,7 +43,8 @@ func InitShowtimeController() (*controllers.ShowtimeController, error) {
 
 func InitShowtimeSeatController() (*controllers.ShowtimeSeatController, error) {
 	pool := provider.ProvidePgxPool()
-	iStore := sqlc.NewStore(pool)
+	productClient := provider.ProvideFilmClient()
+	iStore := sqlc.NewStore(pool, productClient)
 	iRedis := redis.NewRedisClient()
 	iShowtimeSeat := showtimeseat.NewShowtimeSeatService(iStore, iRedis)
 	showtimeSeatController := controllers.NewShowtimeSeatController(iShowtimeSeat)

@@ -10,6 +10,7 @@ import (
 
 var dbSet = wire.NewSet(
 	provider.ProvidePgxPool,
+	provider.ProvideFilmClient,
 	sqlc.NewStore,
 )
 

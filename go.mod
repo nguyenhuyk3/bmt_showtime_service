@@ -12,6 +12,8 @@ require (
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/spf13/viper v1.20.1
 	google.golang.org/grpc v1.72.2
+	product v0.0.0-00010101000000-000000000000
+
 )
 
 require (
@@ -61,5 +63,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	product v0.0.0-00010101000000-000000000000
 )
