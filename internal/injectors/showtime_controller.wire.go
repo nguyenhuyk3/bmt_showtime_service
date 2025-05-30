@@ -13,6 +13,7 @@ func InitShowtimeController() (*controllers.ShowtimeController, error) {
 	wire.Build(
 		dbSet,
 		redisSet,
+		filmClientSet,
 
 		showtime.NewShowtimeService,
 		controllers.NewShowtimeController,

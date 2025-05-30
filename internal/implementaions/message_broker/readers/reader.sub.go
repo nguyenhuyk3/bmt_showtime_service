@@ -4,7 +4,6 @@ import (
 	"bmt_showtime_service/db/sqlc"
 	"bmt_showtime_service/dto/message"
 	"bmt_showtime_service/global"
-	"bmt_showtime_service/utils/convertors"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -49,14 +48,14 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 		}
 
 		switch productMessage.After.EventType {
-		case global.FILM_CREATED:
-			var payloadProductFilmData message.NewFilmCreationMsg
-			if err := json.Unmarshal([]byte(productMessage.After.Payload), &payloadProductFilmData); err != nil {
-				log.Printf("failed to parse payload (%s): %v", productMessage.After.EventType, err)
-				return
-			}
+		// case global.FILM_CREATED:
+		// 	var payloadProductFilmData message.NewFilmCreationMsg
+		// 	if err := json.Unmarshal([]byte(productMessage.After.Payload), &payloadProductFilmData); err != nil {
+		// 		log.Printf("failed to parse payload (%s): %v", productMessage.After.EventType, err)
+		// 		return
+		// 	}
 
-			m.handleFilmCreation(payloadProductFilmData)
+		// 	m.handleFilmCreation(payloadProductFilmData)
 		case global.FAB_CREATED:
 			var payloadProductFABData message.NewFABCreateMsg
 			if err := json.Unmarshal([]byte(productMessage.After.Payload), &payloadProductFABData); err != nil {
@@ -117,24 +116,24 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 	}
 }
 
-func (m *MessageBrokerReader) handleFilmCreation(message message.NewFilmCreationMsg) {
-	duration, err := convertors.ParseDurationToPGInterval(message.Duration)
-	if err != nil {
-		log.Printf("an error occurre when converting to duration: %v", err)
-		return
-	}
+// func (m *MessageBrokerReader) handleFilmCreation(message message.NewFilmCreationMsg) {
+// 	duration, err := convertors.ParseDurationToPGInterval(message.Duration)
+// 	if err != nil {
+// 		log.Printf("an error occurre when converting to duration: %v", err)
+// 		return
+// 	}
 
-	err = m.SqlQuery.CreateNewFilmId(m.Context,
-		sqlc.CreateNewFilmIdParams{
-			FilmID:   message.FilmId,
-			Duration: duration,
-		})
-	if err != nil {
-		log.Printf("an error occur when creating new film id (%d): %v", message.FilmId, err)
-	} else {
-		log.Printf("create new film id (%d) successfully", message.FilmId)
-	}
-}
+// 	err = m.SqlQuery.CreateNewFilmId(m.Context,
+// 		sqlc.CreateNewFilmIdParams{
+// 			FilmID:   message.FilmId,
+// 			Duration: duration,
+// 		})
+// 	if err != nil {
+// 		log.Printf("an error occur when creating new film id (%d): %v", message.FilmId, err)
+// 	} else {
+// 		log.Printf("create new film id (%d) successfully", message.FilmId)
+// 	}
+// }
 
 func (m *MessageBrokerReader) hanleFABCreation(payload message.NewFABCreateMsg) {
 	err := m.SqlQuery.CreateNewFABInfo(m.Context,
@@ -168,7 +167,7 @@ func (m *MessageBrokerReader) handleOrderFailed(payload message.PayloadSubOrderD
 	if err != nil {
 		log.Printf("%v", err)
 	} else {
-		log.Printf("handle update seat status successfully (%d)- (%s)", payload.OrderId, status)
+		log.Printf("handle update seat status successfully (%d) - (%s)", payload.OrderId, status)
 	}
 }
 
@@ -177,6 +176,6 @@ func (m *MessageBrokerReader) handleOrderSuccess(payload message.PayloadSubOrder
 	if err != nil {
 		log.Printf("%v", err)
 	} else {
-		log.Printf("handle update seat status successfully (%d)- (%s)", payload.OrderId, status)
+		log.Printf("handle update seat status successfully (%d) - (%s)", payload.OrderId, status)
 	}
 }

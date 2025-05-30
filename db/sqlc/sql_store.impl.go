@@ -25,6 +25,7 @@ func (s *SqlStore) ReleaseShowtimeTran(ctx context.Context, arg request.ReleaseS
 			if errors.Is(err, sql.ErrNoRows) {
 				return global.ErrNoShowtimeExist
 			}
+
 			return fmt.Errorf("failed to check showtime existence: %w", err)
 		}
 		if isShowtimeRealeased {

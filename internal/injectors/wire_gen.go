@@ -32,7 +32,8 @@ func InitShowtimeController() (*controllers.ShowtimeController, error) {
 	pool := provider.ProvidePgxPool()
 	iStore := sqlc.NewStore(pool)
 	iRedis := redis.NewRedisClient()
-	iShowtime := showtime.NewShowtimeService(iStore, iRedis)
+	productClient := provider.ProvideFilmClient()
+	iShowtime := showtime.NewShowtimeService(iStore, iRedis, productClient)
 	showtimeController := controllers.NewShowtimeController(iShowtime)
 	return showtimeController, nil
 }

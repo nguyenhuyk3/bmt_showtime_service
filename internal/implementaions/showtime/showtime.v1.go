@@ -13,12 +13,15 @@ import (
 	"net/http"
 	"time"
 
+	"product"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type showtimeService struct {
-	SqlStore    sqlc.IStore
-	RedisClient services.IRedis
+	SqlStore      sqlc.IStore
+	RedisClient   services.IRedis
+	ProductClient product.ProductClient
 }
 
 const (
@@ -84,12 +87,16 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 		startTime = latestShowtime.Time.Add(time_off)
 	}
 
-	filmDuration, err := s.SqlStore.GetDuration(ctx, arg.FilmId)
+	resp, err := s.ProductClient.GetFilmDuration(ctx, &product.GetFilmDurationReq{FilmId: arg.FilmId})
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("failed to get film duration: %w", err)
 	}
-	if !filmDuration.Valid {
-		return http.StatusBadRequest, fmt.Errorf("film duration is invalid")
+
+	fmt.Println(resp)
+
+	filmDuration, err := convertors.ParseDurationToPGInterval(resp.FilmDuration)
+	if err != nil {
+		return http.StatusInternalServerError, err
 	}
 
 	duration := time.Duration(filmDuration.Microseconds) * time.Microsecond
@@ -248,9 +255,11 @@ func (s *showtimeService) GetAllShowtimesByFilmIdInOneDate(
 
 func NewShowtimeService(
 	sqlStore sqlc.IStore,
-	redisClient services.IRedis) services.IShowtime {
+	redisClient services.IRedis,
+	productClient product.ProductClient) services.IShowtime {
 	return &showtimeService{
-		SqlStore:    sqlStore,
-		RedisClient: redisClient,
+		SqlStore:      sqlStore,
+		RedisClient:   redisClient,
+		ProductClient: productClient,
 	}
 }
