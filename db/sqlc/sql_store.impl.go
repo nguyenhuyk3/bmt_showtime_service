@@ -123,7 +123,7 @@ func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.Paylo
 				return fmt.Errorf("an error occur when get price of seat by id (%d): %w", seat.SeatId, err)
 			}
 
-			//
+			// Caculate seat price
 			totalPrice = totalPrice + seatPrice
 		}
 
@@ -136,6 +136,7 @@ func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.Paylo
 					return fmt.Errorf("an error occur when get price of fab by id (%d): %w", fAB.FabId, err)
 				}
 
+				// Caculate fab price
 				totalPrice = totalPrice + resp.Price
 			}
 		}

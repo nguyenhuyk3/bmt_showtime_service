@@ -21,17 +21,18 @@ func ProvideQueries() *sqlc.Queries {
 }
 
 var (
-	filmClient     product.ProductClient
-	filmClientOnce sync.Once
+	productClient     product.ProductClient
+	productClientOnce sync.Once
 )
 
-func ProvideFilmClient() product.ProductClient {
-	filmClientOnce.Do(func() {
+func ProvideProductClient() product.ProductClient {
+	productClientOnce.Do(func() {
 		conn, err := grpc.Dial("localhost:50033", grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Fatalf("cannot connect to product service on port 50033: %v", err)
 		}
-		filmClient = product.NewProductClient(conn)
+		productClient = product.NewProductClient(conn)
 	})
-	return filmClient
+
+	return productClient
 }

@@ -16,7 +16,6 @@ type MessageBrokerReader struct {
 
 var topics = []string{
 	global.BMT_ORDER_PUBLIC_OUTBOXES,
-	global.BMT_PRODUCT_PUBLIC_OUTBOXES,
 }
 
 func NewMessageBrokerReader(

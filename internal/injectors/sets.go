@@ -10,7 +10,7 @@ import (
 
 var dbSet = wire.NewSet(
 	provider.ProvidePgxPool,
-	provider.ProvideFilmClient,
+	provider.ProvideProductClient,
 	sqlc.NewStore,
 )
 
@@ -18,6 +18,6 @@ var redisSet = wire.NewSet(
 	redis.NewRedisClient,
 )
 
-var filmClientSet = wire.NewSet(
-	provider.ProvideFilmClient,
+var productClientSet = wire.NewSet(
+	provider.ProvideProductClient,
 )
