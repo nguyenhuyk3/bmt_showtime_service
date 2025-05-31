@@ -118,3 +118,16 @@ func (s *ShowtimeController) ReleaseShowtime(c *gin.Context) {
 
 	responses.SuccessResponse(c, status, "release showtime perform successfully", nil)
 }
+
+func (s *ShowtimeController) GetAllFilmsCurrentlyShowing(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	films, status, err := s.ShowtimeService.GetAllFilmsCurrentlyShowing(ctx)
+	if err != nil {
+		responses.FailureResponse(c, status, err.Error())
+		return
+	}
+
+	responses.SuccessResponse(c, status, "get all films currently showing successfully", films)
+}

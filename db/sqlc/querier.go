@@ -15,6 +15,7 @@ type Querier interface {
 	CreateShowTime(ctx context.Context, arg CreateShowTimeParams) error
 	GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdInOneDateParams) ([]Showtime, error)
 	GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeID int32) ([]ShowtimeSeat, error)
+	GetFilmIdsInToday(ctx context.Context, showDate pgtype.Date) ([]int32, error)
 	GetLatestShowtimeByAuditoriumId(ctx context.Context, arg GetLatestShowtimeByAuditoriumIdParams) (pgtype.Timestamp, error)
 	GetPriceOfSeatBySeatId(ctx context.Context, id int32) (int32, error)
 	GetShowdateByShowtimeId(ctx context.Context, id int32) (pgtype.Date, error)

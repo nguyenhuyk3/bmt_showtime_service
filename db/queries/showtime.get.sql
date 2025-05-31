@@ -32,3 +32,8 @@ SELECT show_date
 FROM showtimes
 WHERE id = $1;
 
+-- name: GetFilmIdsInToday :many
+SELECT DISTINCT film_id
+FROM showtimes 
+WHERE show_date = $1;
+

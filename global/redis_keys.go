@@ -1,7 +1,8 @@
 package global
 
 const (
-	FILM = "film::"
+	FILM                   = "film::"
+	FILM_CURRENTLY_SHOWING = "film_currently_showing::"
 
 	SHOWTIME           = "showtime::"
 	SHOWTIME_ID        = "showtime_id::"

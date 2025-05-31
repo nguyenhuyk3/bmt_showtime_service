@@ -66,7 +66,7 @@ func (m *MessageBrokerReader) processMessage(topic string, value []byte) {
 				return
 			}
 
-			m.handleOrderFailed(payloadSubOrderData, global.ORDER_SUCCESS)
+			m.handleOrderFailed(payloadSubOrderData, global.ORDER_FAILED)
 
 		// change seat status reserved -> booked
 		case global.ORDER_SUCCESS:

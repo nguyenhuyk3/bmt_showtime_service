@@ -3,6 +3,7 @@ package showtime
 import (
 	"bmt_showtime_service/db/sqlc"
 	"bmt_showtime_service/dto/request"
+	"bmt_showtime_service/dto/response"
 	"bmt_showtime_service/global"
 	"bmt_showtime_service/internal/services"
 	"bmt_showtime_service/utils/convertors"
@@ -27,7 +28,57 @@ type showtimeService struct {
 const (
 	time_off = 25 * time.Minute
 	two_days = 60 * 24 * 2
+	one_day  = 60 * 24
 )
+
+// GetAllFilmsCurrentlyShowing implements services.IShowtime.
+func (s *showtimeService) GetAllFilmsCurrentlyShowing(ctx context.Context) (any, int, error) {
+	tomorrow := time.Now().AddDate(0, 0, 1).Truncate(24 * time.Hour)
+	filmIds, err := s.SqlStore.GetFilmIdsInToday(ctx, pgtype.Date{
+		Time:  tomorrow,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get film ids: %w", err)
+	}
+	formattedTomorrow := tomorrow.Format("2006-01-02")
+
+	if len(filmIds) == 0 {
+		return nil, http.StatusNotFound, fmt.Errorf("there are no films showing today")
+	}
+	var filmsCurrentlyShowing []response.FilmCurrentlyShowing
+	var key string = fmt.Sprintf("%s%s", global.FILM_CURRENTLY_SHOWING, formattedTomorrow)
+
+	err = s.RedisClient.Get(key, &filmsCurrentlyShowing)
+	if err != nil {
+		if err.Error() == fmt.Sprintf("key %s does not exist", key) {
+			for _, filmId := range filmIds {
+				resp, err := s.ProductClient.GetFilmCurrentlyShowing(ctx, &product.GetFilmCurrentlyShowingReq{FilmId: filmId})
+				if err != nil {
+					return nil, http.StatusInternalServerError, fmt.Errorf("failed to get film with id (%d): %w", filmId, err)
+				}
+
+				filmsCurrentlyShowing = append(filmsCurrentlyShowing, response.FilmCurrentlyShowing{
+					FilmId:    resp.FilmId,
+					PosterUrl: resp.PosterUrl,
+					Genres:    resp.Genres,
+					Duration:  resp.Duration,
+				})
+			}
+
+			err = s.RedisClient.Save(key, filmsCurrentlyShowing, one_day)
+			if err != nil {
+				return nil, http.StatusInternalServerError, fmt.Errorf("failed to save films currently showing: %w", err)
+			}
+
+			return filmsCurrentlyShowing, http.StatusOK, nil
+		}
+
+		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get films currently showing with key (%s): %w", key, err)
+	}
+
+	return filmsCurrentlyShowing, http.StatusOK, nil
+}
 
 // AddShowtime implements services.IShowtime.
 func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowtimeReq) (int, error) {

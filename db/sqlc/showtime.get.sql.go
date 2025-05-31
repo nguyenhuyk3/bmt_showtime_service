@@ -53,6 +53,32 @@ func (q *Queries) GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetA
 	return items, nil
 }
 
+const getFilmIdsInToday = `-- name: GetFilmIdsInToday :many
+SELECT DISTINCT film_id
+FROM showtimes 
+WHERE show_date = $1
+`
+
+func (q *Queries) GetFilmIdsInToday(ctx context.Context, showDate pgtype.Date) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getFilmIdsInToday, showDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int32{}
+	for rows.Next() {
+		var film_id int32
+		if err := rows.Scan(&film_id); err != nil {
+			return nil, err
+		}
+		items = append(items, film_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLatestShowtimeByAuditoriumId = `-- name: GetLatestShowtimeByAuditoriumId :one
 SELECT end_time
 FROM showtimes
