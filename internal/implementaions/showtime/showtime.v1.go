@@ -53,17 +53,19 @@ func (s *showtimeService) GetAllFilmsCurrentlyShowing(ctx context.Context) (any,
 	if err != nil {
 		if err.Error() == fmt.Sprintf("key %s does not exist", key) {
 			for _, filmId := range filmIds {
-				resp, err := s.ProductClient.GetFilmCurrentlyShowing(ctx, &product.GetFilmCurrentlyShowingReq{FilmId: filmId})
+				resp, err := s.ProductClient.GetFilm(ctx, &product.GetFilmReq{FilmId: filmId})
 				if err != nil {
 					return nil, http.StatusInternalServerError, fmt.Errorf("failed to get film with id (%d): %w", filmId, err)
 				}
 
-				filmsCurrentlyShowing = append(filmsCurrentlyShowing, response.FilmCurrentlyShowing{
-					FilmId:    resp.FilmId,
-					PosterUrl: resp.PosterUrl,
-					Genres:    resp.Genres,
-					Duration:  resp.Duration,
-				})
+				filmsCurrentlyShowing = append(filmsCurrentlyShowing,
+					response.FilmCurrentlyShowing{
+						FilmId:    resp.FilmId,
+						Title:     resp.Title,
+						PosterUrl: resp.PosterUrl,
+						Genres:    resp.Genres,
+						Duration:  resp.Duration,
+					})
 			}
 
 			err = s.RedisClient.Save(key, filmsCurrentlyShowing, one_day)
@@ -85,7 +87,7 @@ func (s *showtimeService) AddShowtime(ctx context.Context, arg request.AddShowti
 	// This code will also check if the film exists or not.
 	resp, err := s.ProductClient.GetFilmDuration(ctx, &product.GetFilmDurationReq{FilmId: arg.FilmId})
 	if err != nil {
-		if errors.Is(err, fmt.Errorf("film with %d doesn't exist", arg.FilmId)) {
+		if err.Error() == fmt.Sprintf("rpc error: code = Unknown desc = film with %d doesn't exist", arg.FilmId) {
 			return http.StatusNotFound, err
 		}
 

@@ -12,11 +12,13 @@ func initRouter() *gin.Engine {
 	// Routers
 	showtimetRouter := routers.ShowtimeServiceRouterGroup.Showtime
 	showtimeSeatRouter := routers.ShowtimeServiceRouterGroup.ShowtimeSeat
+	cinemaRouter := routers.ShowtimeServiceRouterGroup.Cinema
 
 	mainGroup := r.Group("/v1")
 	{
 		showtimetRouter.InitShowtimeRouter(mainGroup)
 		showtimeSeatRouter.InitShowtimeSeatRouter(mainGroup)
+		cinemaRouter.InitCinmaRouter(mainGroup)
 	}
 
 	return r

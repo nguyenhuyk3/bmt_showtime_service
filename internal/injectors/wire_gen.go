@@ -9,12 +9,23 @@ package injectors
 import (
 	"bmt_showtime_service/db/sqlc"
 	"bmt_showtime_service/internal/controllers"
+	"bmt_showtime_service/internal/implementaions/cinema"
 	"bmt_showtime_service/internal/implementaions/message_broker/readers"
 	"bmt_showtime_service/internal/implementaions/redis"
 	"bmt_showtime_service/internal/implementaions/showtime"
 	"bmt_showtime_service/internal/implementaions/showtime_seat"
 	"bmt_showtime_service/internal/injectors/provider"
 )
+
+// Injectors from cinema_controller.wire.go:
+
+func InitCinemaController() (*controllers.CinemaController, error) {
+	queries := provider.ProvideQueries()
+	iRedis := redis.NewRedisClient()
+	iCinema := cinema.NewCinemaService(queries, iRedis)
+	cinemaController := controllers.NewCinemaController(iCinema)
+	return cinemaController, nil
+}
 
 // Injectors from message_broker.wire.go:
 
