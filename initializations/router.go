@@ -18,7 +18,7 @@ func initRouter() *gin.Engine {
 	{
 		showtimetRouter.InitShowtimeRouter(mainGroup)
 		showtimeSeatRouter.InitShowtimeSeatRouter(mainGroup)
-		cinemaRouter.InitCinmaRouter(mainGroup)
+		cinemaRouter.InitCinemaRouter(mainGroup)
 	}
 
 	return r

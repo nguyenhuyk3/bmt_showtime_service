@@ -24,7 +24,7 @@ func NewCinemaController(
 	}
 }
 
-func (c *CinemaController) GetCinemasForShowingFilm(gc *gin.Context) {
+func (c *CinemaController) GetCinemasForShowingFilmByFilmId(gc *gin.Context) {
 	filmId, err := strconv.Atoi(gc.Param("film_id"))
 	if err != nil {
 		responses.FailureResponse(gc, http.StatusBadRequest, fmt.Sprintf("invalid film_id (%s)", gc.Param("film_id")))
@@ -34,7 +34,7 @@ func (c *CinemaController) GetCinemasForShowingFilm(gc *gin.Context) {
 	ctx, cancel := context.WithTimeout(gc.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	cinema, status, err := c.CinemaService.GetCinemasForShowingFilm(ctx, int32(filmId))
+	cinema, status, err := c.CinemaService.GetCinemasForShowingFilmByFilmId(ctx, int32(filmId))
 	if err != nil {
 		responses.FailureResponse(gc, status, err.Error())
 		return

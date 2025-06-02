@@ -14,8 +14,8 @@ type cinemaService struct {
 }
 
 // GetCinemasForShowingFilm implements services.ICinema.
-func (c *cinemaService) GetCinemasForShowingFilm(ctx context.Context, filmId int32) (any, int, error) {
-	cinema, err := c.SqlStore.GetCinemasForShowingFilm(ctx, filmId)
+func (c *cinemaService) GetCinemasForShowingFilmByFilmId(ctx context.Context, filmId int32) (any, int, error) {
+	cinema, err := c.SqlStore.GetCinemasForShowingFilmByFilmId(ctx, filmId)
 	if err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get cinema for showing film: %w", err)
 	}

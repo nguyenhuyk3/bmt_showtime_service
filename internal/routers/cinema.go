@@ -9,7 +9,7 @@ import (
 
 type CinemaRouter struct{}
 
-func (cr *CinemaRouter) InitCinmaRouter(router *gin.RouterGroup) {
+func (cr *CinemaRouter) InitCinemaRouter(router *gin.RouterGroup) {
 	cinemaController, err := injectors.InitCinemaController()
 	if err != nil {
 		log.Fatalf("failed to initialize CinemaController: %v", err)
@@ -20,8 +20,8 @@ func (cr *CinemaRouter) InitCinmaRouter(router *gin.RouterGroup) {
 	{
 		cinemaPublicRouter := cinemaRouter.Group("/public")
 		{
-			cinemaPublicRouter.GET("/get_cinemas_for_showing_film/:film_id",
-				cinemaController.GetCinemasForShowingFilm)
+			cinemaPublicRouter.GET("/get_cinemas_for_showing_film_by_film_id/:film_id",
+				cinemaController.GetCinemasForShowingFilmByFilmId)
 		}
 	}
 }

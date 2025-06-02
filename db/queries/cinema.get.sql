@@ -1,4 +1,4 @@
--- name: GetCinemasForShowingFilm :many
+-- name: GetCinemasForShowingFilmByFilmId :many
 SELECT DISTINCT c.*
 FROM showtimes sh
 JOIN auditoriums a ON sh.auditorium_id = a.id

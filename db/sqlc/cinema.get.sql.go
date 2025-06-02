@@ -9,7 +9,7 @@ import (
 	"context"
 )
 
-const getCinemasForShowingFilm = `-- name: GetCinemasForShowingFilm :many
+const getCinemasForShowingFilmByFilmId = `-- name: GetCinemasForShowingFilmByFilmId :many
 SELECT DISTINCT c.id, c.name, c.city, c.location, c.is_released, c.created_at, c.updated_at
 FROM showtimes sh
 JOIN auditoriums a ON sh.auditorium_id = a.id
@@ -21,8 +21,8 @@ WHERE sh.film_id = $1
     AND a.is_released = true
 `
 
-func (q *Queries) GetCinemasForShowingFilm(ctx context.Context, filmID int32) ([]Cinema, error) {
-	rows, err := q.db.Query(ctx, getCinemasForShowingFilm, filmID)
+func (q *Queries) GetCinemasForShowingFilmByFilmId(ctx context.Context, filmID int32) ([]Cinema, error) {
+	rows, err := q.db.Query(ctx, getCinemasForShowingFilmByFilmId, filmID)
 	if err != nil {
 		return nil, err
 	}
