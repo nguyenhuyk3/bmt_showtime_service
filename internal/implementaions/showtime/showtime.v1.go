@@ -31,6 +31,38 @@ const (
 	one_day  = 60 * 24
 )
 
+// GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate implements services.IShowtime.
+func (s *showtimeService) GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(ctx context.Context,
+	arg request.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateReq) (any, int, error) {
+	showDate, err := convertors.ConvertDateStringToTime(arg.ShowDate)
+	if err != nil {
+		return nil, http.StatusBadRequest, err
+	}
+
+	today := time.Now().Truncate(24 * time.Hour)
+	if showDate.Before(today) {
+		return nil, http.StatusBadRequest, fmt.Errorf("show date must not be in the past")
+	}
+
+	showtimes, err := s.SqlStore.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(ctx,
+		sqlc.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateParams{
+			FilmID:       arg.FilmId,
+			CinemaID:     arg.CinemaId,
+			AuditoriumID: arg.AuditoriumId,
+			ShowDate: pgtype.Date{
+				Time:  showDate,
+				Valid: true,
+			},
+		})
+	if err != nil {
+		return nil,
+			http.StatusInternalServerError,
+			fmt.Errorf("failed to get showtimes by film id and by cinema id and by auditorium id and in one date: %w", err)
+	}
+
+	return showtimes, http.StatusOK, nil
+}
+
 // GetAllFilmsCurrentlyShowing implements services.IShowtime.
 func (s *showtimeService) GetAllFilmsCurrentlyShowing(ctx context.Context) (any, int, error) {
 	tomorrow := time.Now().AddDate(0, 0, 1).Truncate(24 * time.Hour)

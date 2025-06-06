@@ -120,12 +120,6 @@ VALUES
         'Vincom Landmark 81'
     );
 
--- INSERT INTO film_infos (film_id, duration)
--- VALUES
---   (1, INTERVAL '1 hour 31 minutes'),
---   (2, INTERVAL '1 hour 45 minutes'),
---   (3, INTERVAL '2 hours 10 minutes');
-
 INSERT INTO
     "auditoriums" ("cinema_id", "name", "seat_capacity")
 SELECT

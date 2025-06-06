@@ -13,9 +13,10 @@ import (
 type Querier interface {
 	CreateOutbox(ctx context.Context, arg CreateOutboxParams) error
 	CreateShowTime(ctx context.Context, arg CreateShowTimeParams) error
+	GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateParams) ([]Showtime, error)
 	GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdInOneDateParams) ([]Showtime, error)
 	GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeID int32) ([]ShowtimeSeat, error)
-	GetCinemasForShowingFilmByFilmId(ctx context.Context, filmID int32) ([]Cinema, error)
+	GetCinemasForShowingFilmByFilmId(ctx context.Context, filmID int32) ([]GetCinemasForShowingFilmByFilmIdRow, error)
 	GetFilmIdsInToday(ctx context.Context, showDate pgtype.Date) ([]int32, error)
 	GetLatestShowtimeByAuditoriumId(ctx context.Context, arg GetLatestShowtimeByAuditoriumIdParams) (pgtype.Timestamp, error)
 	GetPriceOfSeatBySeatId(ctx context.Context, id int32) (int32, error)

@@ -1,5 +1,5 @@
 -- name: GetCinemasForShowingFilmByFilmId :many
-SELECT DISTINCT c.*
+SELECT DISTINCT c.id, c.name, c.city, c.location
 FROM showtimes sh
 JOIN auditoriums a ON sh.auditorium_id = a.id
 JOIN cinemas c ON a.cinema_id = c.id

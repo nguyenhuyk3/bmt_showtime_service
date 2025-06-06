@@ -11,6 +11,60 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate = `-- name: GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate :many
+SELECT sh.id, sh.film_id, sh.auditorium_id, sh.show_date, sh.start_time, sh.end_time, sh.is_released, sh.changed_by, sh.created_at, sh.updated_at
+FROM showtimes sh
+JOIN auditoriums a ON sh.auditorium_id = a.id
+WHERE sh.film_id = $1
+    AND a.cinema_id = $2
+    AND sh.auditorium_id = $3
+    AND sh.show_date = $4
+    AND sh.is_released = true
+`
+
+type GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateParams struct {
+	FilmID       int32       `json:"film_id"`
+	CinemaID     int32       `json:"cinema_id"`
+	AuditoriumID int32       `json:"auditorium_id"`
+	ShowDate     pgtype.Date `json:"show_date"`
+}
+
+func (q *Queries) GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateParams) ([]Showtime, error) {
+	rows, err := q.db.Query(ctx, getAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate,
+		arg.FilmID,
+		arg.CinemaID,
+		arg.AuditoriumID,
+		arg.ShowDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Showtime{}
+	for rows.Next() {
+		var i Showtime
+		if err := rows.Scan(
+			&i.ID,
+			&i.FilmID,
+			&i.AuditoriumID,
+			&i.ShowDate,
+			&i.StartTime,
+			&i.EndTime,
+			&i.IsReleased,
+			&i.ChangedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllShowTimesByFilmIdInOneDate = `-- name: GetAllShowTimesByFilmIdInOneDate :many
 SELECT id, film_id, auditorium_id, show_date, start_time, end_time, is_released, changed_by, created_at, updated_at 
 FROM showtimes 

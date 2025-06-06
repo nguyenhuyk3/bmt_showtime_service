@@ -37,3 +37,15 @@ SELECT DISTINCT film_id
 FROM showtimes 
 WHERE show_date = $1;
 
+-- name: GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate :many
+SELECT sh.*
+FROM showtimes sh
+JOIN auditoriums a ON sh.auditorium_id = a.id
+WHERE sh.film_id = $1
+    AND a.cinema_id = $2
+    AND sh.auditorium_id = $3
+    AND sh.show_date = $4
+    AND sh.is_released = true;
+
+
+

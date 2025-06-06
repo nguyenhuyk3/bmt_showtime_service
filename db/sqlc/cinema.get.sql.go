@@ -10,7 +10,7 @@ import (
 )
 
 const getCinemasForShowingFilmByFilmId = `-- name: GetCinemasForShowingFilmByFilmId :many
-SELECT DISTINCT c.id, c.name, c.city, c.location, c.is_released, c.created_at, c.updated_at
+SELECT DISTINCT c.id, c.name, c.city, c.location
 FROM showtimes sh
 JOIN auditoriums a ON sh.auditorium_id = a.id
 JOIN cinemas c ON a.cinema_id = c.id
@@ -21,23 +21,27 @@ WHERE sh.film_id = $1
     AND a.is_released = true
 `
 
-func (q *Queries) GetCinemasForShowingFilmByFilmId(ctx context.Context, filmID int32) ([]Cinema, error) {
+type GetCinemasForShowingFilmByFilmIdRow struct {
+	ID       int32  `json:"id"`
+	Name     string `json:"name"`
+	City     Cities `json:"city"`
+	Location string `json:"location"`
+}
+
+func (q *Queries) GetCinemasForShowingFilmByFilmId(ctx context.Context, filmID int32) ([]GetCinemasForShowingFilmByFilmIdRow, error) {
 	rows, err := q.db.Query(ctx, getCinemasForShowingFilmByFilmId, filmID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Cinema{}
+	items := []GetCinemasForShowingFilmByFilmIdRow{}
 	for rows.Next() {
-		var i Cinema
+		var i GetCinemasForShowingFilmByFilmIdRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
 			&i.City,
 			&i.Location,
-			&i.IsReleased,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
