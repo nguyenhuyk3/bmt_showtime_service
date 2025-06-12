@@ -19,9 +19,7 @@ type ReleaseShowtimeByIdReq struct {
 	ChangedBy  string
 }
 
-type GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateReq struct {
-	FilmId       int32  `json:"film_id" binding:"required"`
-	CinemaId     int32  `json:"cinema_id" binding:"required"`
-	AuditoriumId int32  `json:"auditorium_id" binding:"required"`
-	ShowDate     string `json:"show_date" binding:"required"`
+type GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRangeReq struct {
+	FilmId   int32 `json:"film_id" binding:"required"`
+	CinemaId int32 `json:"cinema_id" binding:"required"`
 }

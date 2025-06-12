@@ -7,27 +7,126 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getAllShowtimeSeatsByShowtimeId = `-- name: GetAllShowtimeSeatsByShowtimeId :many
-SELECT id, showtime_id, seat_id, status, booked_by, created_at, booked_at
-FROM showtime_seats
-WHERE showtime_id = $1
+SELECT  
+    ss.id,
+    ss.showtime_id,
+    ss.seat_id,
+    s.seat_type,
+    s.seat_number,
+    s.price,
+    ss.status,
+    ss.booked_by,
+    ss.created_at,
+    ss.booked_at
+FROM showtime_seats ss
+JOIN seats s ON s.id = ss.seat_id
+WHERE ss.showtime_id = $1
 `
 
-func (q *Queries) GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeID int32) ([]ShowtimeSeat, error) {
+type GetAllShowtimeSeatsByShowtimeIdRow struct {
+	ID         int32            `json:"id"`
+	ShowtimeID int32            `json:"showtime_id"`
+	SeatID     int32            `json:"seat_id"`
+	SeatType   SeatTypes        `json:"seat_type"`
+	SeatNumber string           `json:"seat_number"`
+	Price      int32            `json:"price"`
+	Status     SeatStatuses     `json:"status"`
+	BookedBy   string           `json:"booked_by"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	BookedAt   pgtype.Timestamp `json:"booked_at"`
+}
+
+func (q *Queries) GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeID int32) ([]GetAllShowtimeSeatsByShowtimeIdRow, error) {
 	rows, err := q.db.Query(ctx, getAllShowtimeSeatsByShowtimeId, showtimeID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ShowtimeSeat{}
+	items := []GetAllShowtimeSeatsByShowtimeIdRow{}
 	for rows.Next() {
-		var i ShowtimeSeat
+		var i GetAllShowtimeSeatsByShowtimeIdRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ShowtimeID,
 			&i.SeatID,
+			&i.SeatType,
+			&i.SeatNumber,
+			&i.Price,
+			&i.Status,
+			&i.BookedBy,
+			&i.CreatedAt,
+			&i.BookedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getShowtimeSeatsFromEarliestTomorrow = `-- name: GetShowtimeSeatsFromEarliestTomorrow :many
+WITH next_showtime AS (
+    SELECT st.id AS showtime_id
+    FROM showtimes st
+    WHERE st.film_id = $1
+        AND st.show_date >= CURRENT_DATE + INTERVAL '1 day'
+    ORDER BY st.show_date, st.start_time
+    LIMIT 1
+)
+SELECT 
+    ss.id,
+    ss.showtime_id,
+    ss.seat_id,
+    s.seat_type,
+    s.seat_number,
+    s.price,
+    ss.status,
+    ss.booked_by,
+    ss.created_at,
+    ss.booked_at
+FROM showtime_seats ss
+JOIN next_showtime ns ON ss.showtime_id = ns.showtime_id
+JOIN seats s ON ss.seat_id = s.id
+ORDER BY ss.seat_id
+`
+
+type GetShowtimeSeatsFromEarliestTomorrowRow struct {
+	ID         int32            `json:"id"`
+	ShowtimeID int32            `json:"showtime_id"`
+	SeatID     int32            `json:"seat_id"`
+	SeatType   SeatTypes        `json:"seat_type"`
+	SeatNumber string           `json:"seat_number"`
+	Price      int32            `json:"price"`
+	Status     SeatStatuses     `json:"status"`
+	BookedBy   string           `json:"booked_by"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	BookedAt   pgtype.Timestamp `json:"booked_at"`
+}
+
+func (q *Queries) GetShowtimeSeatsFromEarliestTomorrow(ctx context.Context, filmID int32) ([]GetShowtimeSeatsFromEarliestTomorrowRow, error) {
+	rows, err := q.db.Query(ctx, getShowtimeSeatsFromEarliestTomorrow, filmID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetShowtimeSeatsFromEarliestTomorrowRow{}
+	for rows.Next() {
+		var i GetShowtimeSeatsFromEarliestTomorrowRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ShowtimeID,
+			&i.SeatID,
+			&i.SeatType,
+			&i.SeatNumber,
+			&i.Price,
 			&i.Status,
 			&i.BookedBy,
 			&i.CreatedAt,

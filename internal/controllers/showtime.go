@@ -132,11 +132,9 @@ func (s *ShowtimeController) GetAllFilmsCurrentlyShowing(c *gin.Context) {
 	responses.SuccessResponse(c, status, "get all films currently showing successfully", films)
 }
 
-func (s *ShowtimeController) GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(c *gin.Context) {
+func (s *ShowtimeController) GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange(c *gin.Context) {
 	filmIdStr := c.Query("film_id")
 	cinemaIdStr := c.Query("cinema_id")
-	auditoriumIdStr := c.Query("auditorium_id")
-	showdate := c.Query("show_date")
 
 	filmId, err := strconv.Atoi(filmIdStr)
 	if err != nil {
@@ -151,21 +149,13 @@ func (s *ShowtimeController) GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditorium
 		return
 	}
 
-	auditoriumId, err := strconv.Atoi(auditoriumIdStr)
-	if err != nil {
-		responses.FailureResponse(c, http.StatusBadRequest, fmt.Sprintf("invalid auditorium id (%s): %v", auditoriumIdStr, err))
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	showtimes, status, err := s.ShowtimeService.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(ctx,
-		request.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateReq{
-			FilmId:       int32(filmId),
-			CinemaId:     int32(cinemaId),
-			AuditoriumId: int32(auditoriumId),
-			ShowDate:     showdate,
+	showtimes, status, err := s.ShowtimeService.GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange(ctx,
+		request.GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRangeReq{
+			FilmId:   int32(filmId),
+			CinemaId: int32(cinemaId),
 		})
 	if err != nil {
 		responses.FailureResponse(c, status, err.Error())

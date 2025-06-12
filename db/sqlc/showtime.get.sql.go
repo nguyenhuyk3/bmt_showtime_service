@@ -11,31 +11,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate = `-- name: GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate :many
+const getAllShowTimesByFilmIdAndByCinemaIdAndInDayRange = `-- name: GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange :many
 SELECT sh.id, sh.film_id, sh.auditorium_id, sh.show_date, sh.start_time, sh.end_time, sh.is_released, sh.changed_by, sh.created_at, sh.updated_at
 FROM showtimes sh
 JOIN auditoriums a ON sh.auditorium_id = a.id
-WHERE sh.film_id = $1
-    AND a.cinema_id = $2
-    AND sh.auditorium_id = $3
-    AND sh.show_date = $4
-    AND sh.is_released = true
+JOIN cinemas c ON a.cinema_id = c.id
+WHERE sh.is_released = TRUE
+    AND sh.film_id = $1
+    AND c.id = $2
+    AND sh.show_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '14 days'
+ORDER BY sh.show_date, sh.start_time
 `
 
-type GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateParams struct {
-	FilmID       int32       `json:"film_id"`
-	CinemaID     int32       `json:"cinema_id"`
-	AuditoriumID int32       `json:"auditorium_id"`
-	ShowDate     pgtype.Date `json:"show_date"`
+type GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRangeParams struct {
+	FilmID int32 `json:"film_id"`
+	ID     int32 `json:"id"`
 }
 
-func (q *Queries) GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateParams) ([]Showtime, error) {
-	rows, err := q.db.Query(ctx, getAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate,
-		arg.FilmID,
-		arg.CinemaID,
-		arg.AuditoriumID,
-		arg.ShowDate,
-	)
+func (q *Queries) GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange(ctx context.Context, arg GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRangeParams) ([]Showtime, error) {
+	rows, err := q.db.Query(ctx, getAllShowTimesByFilmIdAndByCinemaIdAndInDayRange, arg.FilmID, arg.ID)
 	if err != nil {
 		return nil, err
 	}

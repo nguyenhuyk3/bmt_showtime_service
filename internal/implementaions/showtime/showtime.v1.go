@@ -31,33 +31,23 @@ const (
 	one_day  = 60 * 24
 )
 
-// GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate implements services.IShowtime.
-func (s *showtimeService) GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(ctx context.Context,
-	arg request.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateReq) (any, int, error) {
-	showDate, err := convertors.ConvertDateStringToTime(arg.ShowDate)
-	if err != nil {
-		return nil, http.StatusBadRequest, err
-	}
+// GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange implements services.IShowtime.
+func (s *showtimeService) GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange(ctx context.Context,
+	arg request.GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRangeReq) (any, int, error) {
 
-	today := time.Now().Truncate(24 * time.Hour)
-	if showDate.Before(today) {
-		return nil, http.StatusBadRequest, fmt.Errorf("show date must not be in the past")
-	}
-
-	showtimes, err := s.SqlStore.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(ctx,
-		sqlc.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateParams{
-			FilmID:       arg.FilmId,
-			CinemaID:     arg.CinemaId,
-			AuditoriumID: arg.AuditoriumId,
-			ShowDate: pgtype.Date{
-				Time:  showDate,
-				Valid: true,
-			},
+	showtimes, err := s.SqlStore.GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange(ctx,
+		sqlc.GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRangeParams{
+			FilmID: arg.FilmId,
+			ID:     arg.CinemaId, // cinema_id
 		})
 	if err != nil {
 		return nil,
 			http.StatusInternalServerError,
 			fmt.Errorf("failed to get showtimes by film id and by cinema id and by auditorium id and in one date: %w", err)
+	}
+
+	if len(showtimes) == 0 {
+		return nil, http.StatusNotFound, fmt.Errorf("no showtimes for this film")
 	}
 
 	return showtimes, http.StatusOK, nil

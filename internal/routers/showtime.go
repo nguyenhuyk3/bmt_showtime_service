@@ -37,8 +37,8 @@ func (sr *ShowtimeRouter) InitShowtimeRouter(router *gin.RouterGroup) {
 			showtimePublicRouter.GET("/get/:showtime_id", showtimeController.GetShowTime)
 			showtimePublicRouter.GET("/get_all_showtimes", showtimeController.GetAllShowTimesByFilmIdInOneDate)
 			showtimePublicRouter.GET("/get_all_films_currently_showing", showtimeController.GetAllFilmsCurrentlyShowing)
-			showtimePublicRouter.GET("/get_all_showtimes_by_film_id_and_by_cinema_id_and_by_auditorium_id_and_in_one_date",
-				showtimeController.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate)
+			showtimePublicRouter.GET("/get_all_showtimes_by_film_id_and_by_cinema_id_and_in_day_range",
+				showtimeController.GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange)
 		}
 	}
 }

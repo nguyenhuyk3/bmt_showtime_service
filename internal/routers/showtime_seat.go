@@ -21,7 +21,10 @@ func (sr *ShowtimeSeatRouter) InitShowtimeSeatRouter(router *gin.RouterGroup) {
 	{
 		showtimePublicRouter := showtimeSeatPublicRouter.Group("/public")
 		{
-			showtimePublicRouter.GET("/get_all/", showtimeSeatController.GetAllShowtimeSeatsByShowtimeId)
+			showtimePublicRouter.GET("/get_all",
+				showtimeSeatController.GetAllShowtimeSeatsByShowtimeId)
+			showtimePublicRouter.GET("/get_all_from_earliest_tomorrow",
+				showtimeSeatController.GetAllShowtimeSeatsFromEarliestTomorrow)
 		}
 	}
 }

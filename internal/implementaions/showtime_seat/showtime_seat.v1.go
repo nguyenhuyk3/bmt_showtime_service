@@ -20,6 +20,17 @@ const (
 	two_days = 60 * 24 * 2
 )
 
+// GetShowtimeSeatsFromEarliestTomorrow implements services.IShowtimeSeat.
+func (s *ShowtimeSeatService) GetShowtimeSeatsFromEarliestTomorrow(ctx context.Context,
+	arg request.GetShowtimeSeatsFromEarliestTomorrowReq) (any, int, error) {
+	seats, err := s.SqlStore.GetShowtimeSeatsFromEarliestTomorrow(ctx, arg.FilmId)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get seats: %v", err)
+	}
+
+	return seats, http.StatusOK, nil
+}
+
 // GetAllShowtimeSeatsByShowtimeId implements services.IShowtimeSeat.
 func (s *ShowtimeSeatService) GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeId int32) (interface{}, int, error) {
 	showDate, err := s.SqlStore.GetShowdateByShowtimeId(ctx, showtimeId)
@@ -37,7 +48,7 @@ func (s *ShowtimeSeatService) GetAllShowtimeSeatsByShowtimeId(ctx context.Contex
 		return nil, http.StatusBadRequest, fmt.Errorf("cannot get showtime seats for past date (%s)", showDateTime.Format("2006-01-02"))
 	}
 
-	var seats []sqlc.ShowtimeSeat
+	var seats []sqlc.GetAllShowtimeSeatsByShowtimeIdRow
 	var key string = fmt.Sprintf("%s%d::%s", global.SHOWTIME_SEATS, showtimeId, showDateTime.Format("2006-01-02"))
 
 	err = s.RedisClient.Get(key, &seats)

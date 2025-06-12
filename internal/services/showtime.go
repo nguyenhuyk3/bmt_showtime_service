@@ -11,6 +11,6 @@ type IShowtime interface {
 	GetShowtime(ctx context.Context, showtimeId int32) (interface{}, int, error)
 	GetAllShowtimesByFilmIdInOneDate(ctx context.Context, arg request.GetAllShowtimesByFilmIdInOneDateReq) (interface{}, int, error)
 	GetAllFilmsCurrentlyShowing(ctx context.Context) (any, int, error)
-	GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDate(ctx context.Context,
-		arg request.GetAllShowTimesByFilmIdAndByCinemaIdAndByAuditoriumIdAndInOneDateReq) (any, int, error)
+	GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange(ctx context.Context,
+		arg request.GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRangeReq) (any, int, error)
 }
