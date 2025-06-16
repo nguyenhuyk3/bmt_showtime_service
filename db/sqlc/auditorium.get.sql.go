@@ -9,6 +9,28 @@ import (
 	"context"
 )
 
+const getAuditoriumByShowtimeId = `-- name: GetAuditoriumByShowtimeId :one
+SELECT a.id, a.cinema_id, a.name, a.seat_capacity, a.is_released, a.created_at, a.updated_at
+FROM showtimes sh
+JOIN auditoriums a ON sh.auditorium_id = a.id
+WHERE sh.id = $1
+`
+
+func (q *Queries) GetAuditoriumByShowtimeId(ctx context.Context, id int32) (Auditorium, error) {
+	row := q.db.QueryRow(ctx, getAuditoriumByShowtimeId, id)
+	var i Auditorium
+	err := row.Scan(
+		&i.ID,
+		&i.CinemaID,
+		&i.Name,
+		&i.SeatCapacity,
+		&i.IsReleased,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const isAuditoriumExist = `-- name: IsAuditoriumExist :one
 SELECT EXISTS (
     SELECT 1 FROM "auditoriums" WHERE id = $1 AND is_released = true

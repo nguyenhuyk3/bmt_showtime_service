@@ -3,6 +3,7 @@ package provider
 import (
 	"bmt_showtime_service/db/sqlc"
 	"bmt_showtime_service/global"
+	"fmt"
 	"log"
 	"product"
 	"sync"
@@ -21,16 +22,20 @@ func ProvideQueries() *sqlc.Queries {
 }
 
 var (
-	productClient     product.ProductClient
-	productClientOnce sync.Once
+	productClient product.ProductClient
+
+	GRPCClientOnce sync.Once
 )
 
 func ProvideProductClient() product.ProductClient {
-	productClientOnce.Do(func() {
-		conn, err := grpc.Dial("localhost:50033", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	GRPCClientOnce.Do(func() {
+		conn, err := grpc.Dial(
+			fmt.Sprintf("localhost:%s", global.Config.Server.ProductRPCServerPort),
+			grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Fatalf("cannot connect to product service on port 50033: %v", err)
 		}
+
 		productClient = product.NewProductClient(conn)
 	})
 

@@ -95,9 +95,11 @@ func (m *MessageBrokerReader) handleOrderCreated(payload message.PayloadOrderDat
 	}
 
 	if totalPrice != -1 {
-		_ = m.RedisClient.Save(fmt.Sprintf("%s%d", global.ORDER_TOTAL, payload.OrderId), gin.H{
-			"total_price": totalPrice,
-		}, 5)
+		// write total_amount to redis for payment service get this
+		_ = m.RedisClient.Save(fmt.Sprintf("%s%d", global.ORDER_TOTAL, payload.OrderId),
+			gin.H{
+				"total_amount": totalPrice,
+			}, 15)
 	}
 }
 

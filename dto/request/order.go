@@ -12,5 +12,5 @@ type OrderFABReq struct {
 type SubOrder struct {
 	ShowtimeId int32          `json:"showtime_id" binding:"required"`
 	Seats      []OrderSeatReq `json:"seats" binding:"required"`
-	FABs       []OrderFABReq  `json:"fab"`
+	FABs       []OrderFABReq  `json:"fabs"`
 }

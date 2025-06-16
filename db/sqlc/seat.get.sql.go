@@ -21,3 +21,24 @@ func (q *Queries) GetPriceOfSeatBySeatId(ctx context.Context, id int32) (int32, 
 	err := row.Scan(&price)
 	return price, err
 }
+
+const getSeatById = `-- name: GetSeatById :one
+SELECT id, auditorium_id, seat_number, seat_type, price, created_at, updated_at 
+FROM seats
+WHERE id = $1
+`
+
+func (q *Queries) GetSeatById(ctx context.Context, id int32) (Seat, error) {
+	row := q.db.QueryRow(ctx, getSeatById, id)
+	var i Seat
+	err := row.Scan(
+		&i.ID,
+		&i.AuditoriumID,
+		&i.SeatNumber,
+		&i.SeatType,
+		&i.Price,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

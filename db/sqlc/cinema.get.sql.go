@@ -7,7 +7,45 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const getCinemaByShowtimeId = `-- name: GetCinemaByShowtimeId :one
+SELECT c.id, c.name, c.city, c.location, c.is_released, c.created_at, c.updated_at, a.name AS RoomName
+FROM showtimes sh
+JOIN auditoriums a ON sh.auditorium_id = a.id
+JOIN cinemas c ON a.cinema_id = c.id
+WHERE sh.id = $1
+    AND sh.show_date >= CURRENT_DATE
+`
+
+type GetCinemaByShowtimeIdRow struct {
+	ID         int32            `json:"id"`
+	Name       string           `json:"name"`
+	City       Cities           `json:"city"`
+	Location   string           `json:"location"`
+	IsReleased bool             `json:"is_released"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
+	Roomname   string           `json:"roomname"`
+}
+
+func (q *Queries) GetCinemaByShowtimeId(ctx context.Context, id int32) (GetCinemaByShowtimeIdRow, error) {
+	row := q.db.QueryRow(ctx, getCinemaByShowtimeId, id)
+	var i GetCinemaByShowtimeIdRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.City,
+		&i.Location,
+		&i.IsReleased,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Roomname,
+	)
+	return i, err
+}
 
 const getCinemasForShowingFilmByFilmId = `-- name: GetCinemasForShowingFilmByFilmId :many
 SELECT DISTINCT c.id, c.name, c.city, c.location

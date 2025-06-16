@@ -66,26 +66,23 @@ func (s *SqlStore) UpdateSeatStatusTran(ctx context.Context, arg message.Payload
 		switch seatStatus {
 		case global.ORDER_FAILED:
 			for _, seat := range arg.Seats {
-				param := UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
-					SeatID:     seat.SeatId,
-					Status:     SeatStatusesAvailable,
-					BookedBy:   "",
-					ShowtimeID: arg.ShowtimeId,
-				}
-
-				if err := q.UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx, param); err != nil {
+				if err := q.UpdateShowtimeSeatByIdAndShowtimeIdFailed(ctx,
+					UpdateShowtimeSeatByIdAndShowtimeIdFailedParams{
+						SeatID:     seat.SeatId,
+						Status:     SeatStatusesAvailable,
+						ShowtimeID: arg.ShowtimeId,
+					}); err != nil {
 					return fmt.Errorf("failed to update seat %d for showtime %d (%s): %w", seat.SeatId, arg.ShowtimeId, seatStatus, err)
 				}
 			}
 		case global.ORDER_SUCCESS:
 			for _, seat := range arg.Seats {
-				param := UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
-					SeatID:     seat.SeatId,
-					Status:     SeatStatusesBooked,
-					ShowtimeID: arg.ShowtimeId,
-				}
-
-				if err := q.UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx, param); err != nil {
+				if err := q.UpdateShowtimeSeatByIdAndShowtimeIdSuccess(ctx,
+					UpdateShowtimeSeatByIdAndShowtimeIdSuccessParams{
+						SeatID:     seat.SeatId,
+						Status:     SeatStatusesBooked,
+						ShowtimeID: arg.ShowtimeId,
+					}); err != nil {
 					return fmt.Errorf("failed to update seat %d for showtime %d (%s): %w", seat.SeatId, arg.ShowtimeId, seatStatus, err)
 				}
 			}
@@ -104,8 +101,8 @@ func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.Paylo
 
 	err := s.execTran(ctx, func(q *Queries) error {
 		for _, seat := range arg.Seats {
-			err := q.UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx,
-				UpdateShowtimeSeatSeatByIdAndShowtimeIdParams{
+			err := q.UpdateShowtimeSeatByIdAndShowtimeId(ctx,
+				UpdateShowtimeSeatByIdAndShowtimeIdParams{
 					SeatID:     seat.SeatId,
 					Status:     SeatStatusesReserved,
 					BookedBy:   arg.OrderedBy,
@@ -129,9 +126,11 @@ func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.Paylo
 
 		if len(arg.FABs) != 0 {
 			for _, fAB := range arg.FABs {
-				resp, err := s.ProductClient.GetPriceOfFAB(ctx, &product.GetPriceOfFABReq{
-					FABId: fAB.FabId,
-				})
+				// get price of fab from product service
+				resp, err := s.ProductClient.GetPriceOfFAB(ctx,
+					&product.GetPriceOfFABReq{
+						FABId: fAB.FabId,
+					})
 				if err != nil {
 					return fmt.Errorf("an error occur when get price of fab by id (%d): %w", fAB.FabId, err)
 				}

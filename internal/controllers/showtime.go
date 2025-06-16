@@ -164,3 +164,5 @@ func (s *ShowtimeController) GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange(c
 
 	responses.SuccessResponse(c, status, "get all showtimes successfully", showtimes)
 }
+
+

@@ -12,7 +12,7 @@ type PayloadSubOrderData struct {
 	OrderId    int32      `json:"order_id" binding:"required"`
 	ShowtimeId int32      `json:"showtime_id" binding:"required"`
 	Seats      []SeatItem `json:"seats" binding:"required"`
-	FABs       []FabItem  `json:"fab"`
+	FABs       []FabItem  `json:"fabs"`
 }
 
 type FabItem struct {

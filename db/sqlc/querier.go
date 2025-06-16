@@ -16,16 +16,21 @@ type Querier interface {
 	GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange(ctx context.Context, arg GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRangeParams) ([]Showtime, error)
 	GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdInOneDateParams) ([]Showtime, error)
 	GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeID int32) ([]GetAllShowtimeSeatsByShowtimeIdRow, error)
+	GetAuditoriumByShowtimeId(ctx context.Context, id int32) (Auditorium, error)
+	GetCinemaByShowtimeId(ctx context.Context, id int32) (GetCinemaByShowtimeIdRow, error)
 	GetCinemasForShowingFilmByFilmId(ctx context.Context, filmID int32) ([]GetCinemasForShowingFilmByFilmIdRow, error)
 	GetFilmIdsInToday(ctx context.Context, showDate pgtype.Date) ([]int32, error)
 	GetLatestShowtimeByAuditoriumId(ctx context.Context, arg GetLatestShowtimeByAuditoriumIdParams) (pgtype.Timestamp, error)
 	GetPriceOfSeatBySeatId(ctx context.Context, id int32) (int32, error)
+	GetSeatById(ctx context.Context, id int32) (Seat, error)
 	GetShowdateByShowtimeId(ctx context.Context, id int32) (pgtype.Date, error)
 	GetShowtimeById(ctx context.Context, id int32) (Showtime, error)
 	GetShowtimeSeatsFromEarliestTomorrow(ctx context.Context, filmID int32) ([]GetShowtimeSeatsFromEarliestTomorrowRow, error)
 	IsAuditoriumExist(ctx context.Context, id int32) (bool, error)
 	IsShowtimeExist(ctx context.Context, id int32) (bool, error)
-	UpdateShowtimeSeatSeatByIdAndShowtimeId(ctx context.Context, arg UpdateShowtimeSeatSeatByIdAndShowtimeIdParams) error
+	UpdateShowtimeSeatByIdAndShowtimeId(ctx context.Context, arg UpdateShowtimeSeatByIdAndShowtimeIdParams) error
+	UpdateShowtimeSeatByIdAndShowtimeIdFailed(ctx context.Context, arg UpdateShowtimeSeatByIdAndShowtimeIdFailedParams) error
+	UpdateShowtimeSeatByIdAndShowtimeIdSuccess(ctx context.Context, arg UpdateShowtimeSeatByIdAndShowtimeIdSuccessParams) error
 	createShowtimeSeats(ctx context.Context, showtimeID int32) error
 	isShowtimeRealeased(ctx context.Context, id int32) (bool, error)
 	releaseShowtime(ctx context.Context, id int32) error
