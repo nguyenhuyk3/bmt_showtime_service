@@ -14,7 +14,7 @@ FROM showtime_seats ss
 JOIN seats s ON s.id = ss.seat_id
 WHERE ss.showtime_id = $1;
 
--- name: GetShowtimeSeatsFromEarliestTomorrow :many
+-- name: GetAllShowtimeSeatsFromEarliestTomorrow :many
 WITH next_showtime AS (
     SELECT st.id AS showtime_id
     FROM showtimes st

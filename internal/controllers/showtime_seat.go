@@ -53,8 +53,10 @@ func (s *ShowtimeSeatController) GetAllShowtimeSeatsFromEarliestTomorrow(c *gin.
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	seats, status, err := s.ShowtimeSeatService.GetShowtimeSeatsFromEarliestTomorrow(ctx,
-		request.GetShowtimeSeatsFromEarliestTomorrowReq{FilmId: int32(showtimeId)})
+	seats, status, err := s.ShowtimeSeatService.GetAllShowtimeSeatsFromEarliestTomorrow(ctx,
+		request.GetShowtimeSeatsFromEarliestTomorrowReq{
+			FilmId: int32(showtimeId),
+		})
 	if err != nil {
 		responses.FailureResponse(c, status, err.Error())
 		return

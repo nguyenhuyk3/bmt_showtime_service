@@ -16,6 +16,7 @@ type Querier interface {
 	GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRange(ctx context.Context, arg GetAllShowTimesByFilmIdAndByCinemaIdAndInDayRangeParams) ([]Showtime, error)
 	GetAllShowTimesByFilmIdInOneDate(ctx context.Context, arg GetAllShowTimesByFilmIdInOneDateParams) ([]Showtime, error)
 	GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeID int32) ([]GetAllShowtimeSeatsByShowtimeIdRow, error)
+	GetAllShowtimeSeatsFromEarliestTomorrow(ctx context.Context, filmID int32) ([]GetAllShowtimeSeatsFromEarliestTomorrowRow, error)
 	GetAuditoriumByShowtimeId(ctx context.Context, id int32) (Auditorium, error)
 	GetCinemaByShowtimeId(ctx context.Context, id int32) (GetCinemaByShowtimeIdRow, error)
 	GetCinemasForShowingFilmByFilmId(ctx context.Context, filmID int32) ([]GetCinemasForShowingFilmByFilmIdRow, error)
@@ -25,7 +26,6 @@ type Querier interface {
 	GetSeatById(ctx context.Context, id int32) (Seat, error)
 	GetShowdateByShowtimeId(ctx context.Context, id int32) (pgtype.Date, error)
 	GetShowtimeById(ctx context.Context, id int32) (Showtime, error)
-	GetShowtimeSeatsFromEarliestTomorrow(ctx context.Context, filmID int32) ([]GetShowtimeSeatsFromEarliestTomorrowRow, error)
 	IsAuditoriumExist(ctx context.Context, id int32) (bool, error)
 	IsShowtimeExist(ctx context.Context, id int32) (bool, error)
 	UpdateShowtimeSeatByIdAndShowtimeId(ctx context.Context, arg UpdateShowtimeSeatByIdAndShowtimeIdParams) error

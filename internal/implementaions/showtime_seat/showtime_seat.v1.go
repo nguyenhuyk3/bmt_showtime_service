@@ -20,12 +20,24 @@ const (
 	two_days = 60 * 24 * 2
 )
 
-// GetShowtimeSeatsFromEarliestTomorrow implements services.IShowtimeSeat.
-func (s *ShowtimeSeatService) GetShowtimeSeatsFromEarliestTomorrow(ctx context.Context,
+// GetAllShowtimeSeatsFromEarliestTomorrow implements services.IShowtimeSeat.
+func (s *ShowtimeSeatService) GetAllShowtimeSeatsFromEarliestTomorrow(ctx context.Context,
 	arg request.GetShowtimeSeatsFromEarliestTomorrowReq) (any, int, error) {
-	seats, err := s.SqlStore.GetShowtimeSeatsFromEarliestTomorrow(ctx, arg.FilmId)
+	seats, err := s.SqlStore.GetAllShowtimeSeatsFromEarliestTomorrow(ctx, arg.FilmId)
 	if err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get seats: %v", err)
+	}
+
+	showtimeId := seats[0].ShowtimeID
+	showDate, err := s.SqlStore.GetShowdateByShowtimeId(ctx, showtimeId)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get show date by showtime id (%d): %v", showtimeId, err)
+	}
+
+	var key string = fmt.Sprintf("%s%d::%s", global.SHOWTIME_SEATS, showtimeId, showDate.Time.Format("2006-01-02"))
+	err = s.RedisClient.Save(key, &seats, two_days)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("warning: failed to save to Redis with key (%s): %v", key, err)
 	}
 
 	return seats, http.StatusOK, nil

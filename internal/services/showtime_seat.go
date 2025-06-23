@@ -10,6 +10,6 @@ type IShowtimeSeat interface {
 		showtimeId int32) (interface{}, int, error)
 	UpdateShowtimeSeatStatus(ctx context.Context,
 		arg request.UpdateShowtimeSeatStatusReq) (int, error)
-	GetShowtimeSeatsFromEarliestTomorrow(ctx context.Context,
+	GetAllShowtimeSeatsFromEarliestTomorrow(ctx context.Context,
 		arg request.GetShowtimeSeatsFromEarliestTomorrowReq) (any, int, error)
 }

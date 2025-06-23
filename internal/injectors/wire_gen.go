@@ -11,6 +11,7 @@ import (
 	"bmt_showtime_service/internal/controllers"
 	"bmt_showtime_service/internal/implementaions/cinema"
 	"bmt_showtime_service/internal/implementaions/message_broker/readers"
+	"bmt_showtime_service/internal/implementaions/nke"
 	"bmt_showtime_service/internal/implementaions/redis"
 	"bmt_showtime_service/internal/implementaions/showtime"
 	"bmt_showtime_service/internal/implementaions/showtime_seat"
@@ -36,6 +37,17 @@ func InitMessageBroker() (*readers.MessageBrokerReader, error) {
 	iRedis := redis.NewRedisClient()
 	messageBrokerReader := readers.NewMessageBrokerReader(iStore, iRedis)
 	return messageBrokerReader, nil
+}
+
+// Injectors from nke_impl.wire.go:
+
+func InitNKE() (*nke.NKE, error) {
+	pool := provider.ProvidePgxPool()
+	productClient := provider.ProvideProductClient()
+	iStore := sqlc.NewStore(pool, productClient)
+	iRedis := redis.NewRedisClient()
+	nkeNKE := nke.NewNKE(iStore, iRedis)
+	return nkeNKE, nil
 }
 
 // Injectors from showtime_controller.wire.go:

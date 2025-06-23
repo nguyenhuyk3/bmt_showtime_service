@@ -111,26 +111,23 @@ ALTER TABLE showtimes
 ADD CONSTRAINT valid_showtime_duration
 CHECK (start_time <= end_time);
 
-INSERT INTO
-    "cinemas" ("name", "city", "location")
+INSERT INTO "cinemas" ("name", "city", "location")
 VALUES
-    (
-        'CGV Landmark',
-        'HO_CHI_MINH',
-        'Vincom Landmark 81'
-    );
+    ('CGV Landmark', 'HO_CHI_MINH', 'Vincom Landmark 81'),
+    ('CGV Vincom Center', 'HO_CHI_MINH', 'Vincom Center Dong Khoi'),
+    ('CGV Aeon Mall', 'HO_CHI_MINH', 'Aeon Mall Tan Phu'),
+    ('Lotte Cinema', 'HA_NOI', 'Lotte Center Hanoi'),
+    ('CGV Royal City', 'HA_NOI', 'Royal City Thanh Xuan'),
+    ('Galaxy Cinema', 'DONG_NAI', 'Vincom Plaza Bien Hoa');
 
-INSERT INTO
-    "auditoriums" ("cinema_id", "name", "seat_capacity")
+INSERT INTO "auditoriums" ("cinema_id", "name", "seat_capacity")
 SELECT
     c.id,
     'Room ' || i,
-    70
+    80
 FROM
-    generate_series (1, 5) AS i,
-    cinemas c
-WHERE
-    c.name = 'CGV Landmark';
+    generate_series(1, 5) AS i,
+    cinemas c;
 
 DO $$
 DECLARE

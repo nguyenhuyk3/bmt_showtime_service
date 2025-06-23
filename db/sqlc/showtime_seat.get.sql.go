@@ -72,7 +72,7 @@ func (q *Queries) GetAllShowtimeSeatsByShowtimeId(ctx context.Context, showtimeI
 	return items, nil
 }
 
-const getShowtimeSeatsFromEarliestTomorrow = `-- name: GetShowtimeSeatsFromEarliestTomorrow :many
+const getAllShowtimeSeatsFromEarliestTomorrow = `-- name: GetAllShowtimeSeatsFromEarliestTomorrow :many
 WITH next_showtime AS (
     SELECT st.id AS showtime_id
     FROM showtimes st
@@ -98,7 +98,7 @@ JOIN seats s ON ss.seat_id = s.id
 ORDER BY ss.seat_id
 `
 
-type GetShowtimeSeatsFromEarliestTomorrowRow struct {
+type GetAllShowtimeSeatsFromEarliestTomorrowRow struct {
 	ID         int32            `json:"id"`
 	ShowtimeID int32            `json:"showtime_id"`
 	SeatID     int32            `json:"seat_id"`
@@ -111,15 +111,15 @@ type GetShowtimeSeatsFromEarliestTomorrowRow struct {
 	BookedAt   pgtype.Timestamp `json:"booked_at"`
 }
 
-func (q *Queries) GetShowtimeSeatsFromEarliestTomorrow(ctx context.Context, filmID int32) ([]GetShowtimeSeatsFromEarliestTomorrowRow, error) {
-	rows, err := q.db.Query(ctx, getShowtimeSeatsFromEarliestTomorrow, filmID)
+func (q *Queries) GetAllShowtimeSeatsFromEarliestTomorrow(ctx context.Context, filmID int32) ([]GetAllShowtimeSeatsFromEarliestTomorrowRow, error) {
+	rows, err := q.db.Query(ctx, getAllShowtimeSeatsFromEarliestTomorrow, filmID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetShowtimeSeatsFromEarliestTomorrowRow{}
+	items := []GetAllShowtimeSeatsFromEarliestTomorrowRow{}
 	for rows.Next() {
-		var i GetShowtimeSeatsFromEarliestTomorrowRow
+		var i GetAllShowtimeSeatsFromEarliestTomorrowRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ShowtimeID,

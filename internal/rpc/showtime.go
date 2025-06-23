@@ -14,7 +14,8 @@ type ShowtimeRPCServer struct {
 }
 
 // GetSomeInformationForTicket implements showtime.ShowtimeServer.
-func (s *ShowtimeRPCServer) GetSomeInformationForTicket(ctx context.Context, arg *rpc_showtime.GetSomeInformationForTicketReq) (*rpc_showtime.GetSomeInformationForTicketRes, error) {
+func (s *ShowtimeRPCServer) GetSomeInformationForTicket(ctx context.Context,
+	arg *rpc_showtime.GetSomeInformationForTicketReq) (*rpc_showtime.GetSomeInformationForTicketRes, error) {
 	cinema, err := s.SqlStore.GetCinemaByShowtimeId(ctx, arg.ShowtimeId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cinema with showtime id (%d): %w", arg.ShowtimeId, err)
@@ -39,7 +40,10 @@ func (s *ShowtimeRPCServer) GetSomeInformationForTicket(ctx context.Context, arg
 	return &rpc_showtime.GetSomeInformationForTicketRes{
 		CinemaName: cinema.Name,
 		City:       string(cinema.City),
+		Location:   cinema.Location,
 		RoomName:   cinema.Roomname,
+		ShowDate:   showtime.ShowDate.Time.Format("2006-01-02"),
+		StartTime:  showtime.StartTime.Time.Format("15:04"),
 		Seats:      strings.Join(seatNumbers, ", "),
 		FilmId:     showtime.FilmID,
 	}, nil

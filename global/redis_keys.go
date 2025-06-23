@@ -10,6 +10,7 @@ const (
 
 	SHOWTIME_SEATS = "showtime_seats::"
 
-	ORDER       = "order::"
-	ORDER_TOTAL = "order_total::"
+	ORDER         = "order::"
+	ORDER_TOTAL   = "order_total::"
+	ORDER_PAYLOAD = "order_payload::"
 )

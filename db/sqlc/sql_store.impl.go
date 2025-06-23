@@ -97,7 +97,7 @@ func (s *SqlStore) UpdateSeatStatusTran(ctx context.Context, arg message.Payload
 
 // HandleOrderCreatedTran implements IStore.
 func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.PayloadOrderData) (int32, error) {
-	var totalPrice int32 = -1
+	var totalPrice int32 = 0
 
 	err := s.execTran(ctx, func(q *Queries) error {
 		for _, seat := range arg.Seats {
@@ -111,9 +111,6 @@ func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.Paylo
 			if err != nil {
 				return fmt.Errorf("an error occur when updating showtime seat %d: %w", seat.SeatId, err)
 			}
-			// else {
-			// 	return log.Printf("update showtime seat %d with showtime id %d successfully (reserved)", seat.SeatId, payload.ShowtimeId)
-			// }
 
 			seatPrice, err := q.GetPriceOfSeatBySeatId(ctx, seat.SeatId)
 			if err != nil {
@@ -136,7 +133,7 @@ func (s *SqlStore) HandleOrderCreatedTran(ctx context.Context, arg message.Paylo
 				}
 
 				// Caculate fab price
-				totalPrice = totalPrice + resp.Price
+				totalPrice = totalPrice + resp.Price*1000
 			}
 		}
 
